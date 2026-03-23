@@ -207,7 +207,10 @@ const AuthPage = ({ onLogin }: { onLogin: (u: UserInfo) => void }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-8 relative overflow-hidden">
-      <div className="absolute inset-0 bg-background/40 backdrop-blur-xl pointer-events-none" />
+      <div className="absolute inset-0 z-0">
+        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80&w=2600" className="w-full h-full object-cover" alt="bg" />
+        <div className="absolute inset-0 bg-black/30" />
+      </div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-10 relative z-10">
         <div className="text-center space-y-3">
           <div className="text-3xl font-headline text-primary italic tracking-tight">宏大叙事</div>
