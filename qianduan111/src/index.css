@@ -1,0 +1,338 @@
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@200..800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Newsreader", serif;
+  --font-body: "Manrope", sans-serif;
+  --font-label: "Manrope", sans-serif;
+
+  --color-primary: #6bd8cb;
+  --color-on-primary: #003732;
+  --color-background: #131315;
+  --color-surface: #1f1f21;
+  --color-surface-container: #1b1b1d;
+  --color-on-surface: #e4e2e4;
+  --color-on-surface-variant: #c6c6cd;
+  --color-outline: #45464d;
+}
+
+@layer base {
+  body {
+    @apply text-on-surface font-body selection:bg-primary/30;
+    background-color: #000;
+  }
+}
+
+.glass-panel {
+  background: rgba(15, 15, 17, 0.85);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.article-card-surface {
+  background: rgba(20, 20, 22, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.article-card-surface:hover {
+  background: rgba(24, 24, 26, 0.98);
+  border-color: rgba(107, 216, 203, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.article-card-surface::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(107, 216, 203, 0.4), transparent);
+  opacity: 0.5;
+}
+
+.article-card-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(107, 216, 203, 0.03), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-gradient {
+  background: linear-gradient(to bottom, rgba(19,19,21,0) 0%, rgba(19,19,21,1) 100%);
+}
+
+.reading-progress {
+  @apply fixed top-0 left-0 h-[2px] bg-primary z-[100] shadow-[0_0_10px_rgba(107,216,203,0.5)];
+}
+
+/* ─── 色彩增强 ─────────────────────────────────────────────────────────── */
+.vibrant-gradient {
+  background: linear-gradient(135deg, #6bd8cb 0%, #3a86ff 50%, #8338ec 100%);
+}
+
+.glass-card-vibrant {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.stat-card-blue {
+  background: linear-gradient(135deg, rgba(58, 134, 255, 0.1) 0%, rgba(58, 134, 255, 0.05) 100%);
+  border: 1px solid rgba(58, 134, 255, 0.2);
+}
+
+.stat-card-purple {
+  background: linear-gradient(135deg, rgba(131, 56, 236, 0.1) 0%, rgba(131, 56, 236, 0.05) 100%);
+  border: 1px solid rgba(131, 56, 236, 0.2);
+}
+
+.stat-card-teal {
+  background: linear-gradient(135deg, rgba(107, 216, 203, 0.1) 0%, rgba(107, 216, 203, 0.05) 100%);
+  border: 1px solid rgba(107, 216, 203, 0.2);
+}
+
+.text-gradient-vibrant {
+  background: linear-gradient(135deg, #6bd8cb 0%, #3a86ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─── 文章正文排版 ─────────────────────────────────────────────── */
+/* 适用于 dangerouslySetInnerHTML 渲染的 Markdown HTML 内容 */
+.article-body {
+  /* 正文基础：17px，行高 1.85 适合中文阅读 */
+  font-size: 17px;
+  line-height: 1.85;
+  color: rgba(228, 226, 228, 0.85);
+  font-family: "Manrope", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  letter-spacing: 0.01em;
+  /* 限制最大行宽，约 35字/行 是中文最舒适的阅读宽度 */
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 段落：上下各 1.2em */
+.article-body p {
+  margin-top: 0;
+  margin-bottom: 1.4em;
+  text-indent: 0;
+}
+
+/* 最后一个段落不留底部外边距 */
+.article-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* H1 */
+.article-body h1 {
+  font-family: "Newsreader", serif;
+  font-size: 2em;
+  font-style: italic;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #e4e2e4;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  letter-spacing: -0.01em;
+}
+
+/* H2 — 章节标题 */
+.article-body h2 {
+  font-family: "Newsreader", serif;
+  font-size: 1.5em;
+  font-style: italic;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #e4e2e4;
+  margin-top: 2.2em;
+  margin-bottom: 0.8em;
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid rgba(107, 216, 203, 0.15);
+}
+
+/* H3 — 小节标题 */
+.article-body h3 {
+  font-family: "Newsreader", serif;
+  font-size: 1.2em;
+  font-style: italic;
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgba(228, 226, 228, 0.9);
+  margin-top: 1.8em;
+  margin-bottom: 0.6em;
+}
+
+/* H4 */
+.article-body h4 {
+  font-size: 1em;
+  font-weight: 700;
+  color: rgba(228, 226, 228, 0.85);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+/* 第一个元素不留顶部外边距 */
+.article-body > *:first-child {
+  margin-top: 0;
+}
+
+/* 强调与粗体 */
+.article-body strong {
+  color: #e4e2e4;
+  font-weight: 700;
+}
+
+.article-body em {
+  color: rgba(228, 226, 228, 0.9);
+  font-style: italic;
+}
+
+/* 引用块 */
+.article-body blockquote {
+  font-family: "Newsreader", serif;
+  font-size: 1.15em;
+  font-style: italic;
+  line-height: 1.7;
+  color: rgba(228, 226, 228, 0.7);
+  border-left: 3px solid #6bd8cb;
+  padding: 0.8em 0 0.8em 1.5em;
+  margin: 1.8em 0;
+  background: rgba(107, 216, 203, 0.04);
+  border-radius: 0 8px 8px 0;
+}
+
+.article-body blockquote p {
+  margin-bottom: 0;
+}
+
+/* 行内代码 */
+.article-body code {
+  font-size: 0.875em;
+  font-family: "Fira Code", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  background: rgba(255, 255, 255, 0.06);
+  color: #6bd8cb;
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+}
+
+/* 代码块 */
+.article-body pre {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25em 1.5em;
+  margin: 1.8em 0;
+  overflow-x: auto;
+  font-size: 0.875em;
+  line-height: 1.65;
+}
+
+.article-body pre code {
+  background: none;
+  color: rgba(228, 226, 228, 0.85);
+  padding: 0;
+  border: none;
+  white-space: pre;
+  font-size: 1em;
+}
+
+/* 无序/有序列表 */
+.article-body ul,
+.article-body ol {
+  margin-top: 0.5em;
+  margin-bottom: 1.4em;
+  padding-left: 1.8em;
+}
+
+.article-body li {
+  margin-bottom: 0.5em;
+  line-height: 1.8;
+}
+
+.article-body li:last-child {
+  margin-bottom: 0;
+}
+
+.article-body ul > li {
+  list-style-type: disc;
+}
+
+.article-body ol > li {
+  list-style-type: decimal;
+}
+
+/* 嵌套列表 */
+.article-body li > ul,
+.article-body li > ol {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+}
+
+/* 分割线 */
+.article-body hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 2.5em 0;
+}
+
+/* 链接 */
+.article-body a {
+  color: #6bd8cb;
+  text-decoration: underline;
+  text-decoration-color: rgba(107, 216, 203, 0.35);
+  text-underline-offset: 3px;
+  transition: color 0.2s, text-decoration-color 0.2s;
+}
+
+.article-body a:hover {
+  color: #9eeae4;
+  text-decoration-color: rgba(107, 216, 203, 0.8);
+}
+
+/* 图片 */
+.article-body img {
+  max-width: 100%;
+  border-radius: 12px;
+  margin: 1.5em 0;
+  display: block;
+}
+
+/* 表格 */
+.article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.8em 0;
+  font-size: 0.9em;
+}
+
+.article-body th {
+  text-align: left;
+  font-weight: 700;
+  color: #e4e2e4;
+  padding: 0.75em 1em;
+  border-bottom: 2px solid rgba(107, 216, 203, 0.3);
+}
+
+.article-body td {
+  padding: 0.65em 1em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(228, 226, 228, 0.75);
+}
+
+.article-body tr:last-child td {
+  border-bottom: none;
+}

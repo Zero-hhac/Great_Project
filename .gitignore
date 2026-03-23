@@ -1,0 +1,15 @@
+# Root .gitignore
+node_modules/
+dist/
+tmp_build/
+*.exe
+*.log
+.env
+.DS_Store
+.idea/
+.vscode/
+qianduan111/node_modules/
+qianduan111/dist/
+Go-server/tmp_build/
+Go-server/main.exe
+Go-server/.env
