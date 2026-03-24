@@ -44,14 +44,14 @@ cd Great_Project
 
 ### 2. 后端配置与运行
 1. 进入后端目录：`cd Go-server`
-2. 确保您的 MySQL 正在运行，并创建数据库 `blog_db`。
-3. 检查 `.env` 文件中的配置：
+2. 本项目已适配 **TiDB Cloud (Serverless)** 云数据库。
+3. 检查 `.env` 文件中的配置（已自动更新为您的云端参数）：
    ```env
-   DB_USER=root
-   DB_PASSWORD=123456
-   DB_NAME=blog_db
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
+   DB_USER=zcNKfhFvGSDmhGS.root
+   DB_PASSWORD=UK0tmeIicQ9fkmby
+   DB_NAME=sys
+   DB_HOST=gateway01.eu-central-1.prod.aws.tidbcloud.com
+   DB_PORT=4000
    PORT=:8080
    ```
 4. 运行后端：
