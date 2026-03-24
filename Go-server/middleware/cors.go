@@ -16,19 +16,20 @@ func CORSMiddleware() gin.HandlerFunc {
 			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 		}
 
+		// 解决跨域 Cookie 丢失问题：
+		// 1. 设置 SameSite=NoneMode，允许跨域传输 Cookie
+		// 2. 注意：SameSite=None 要求必须同时设置 Secure=true
+		// 只有在 HTTPS 下才启用 SameSite=None，因为 HTTP 不支持 Secure
+		isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
+		if isSecure {
+			c.SetSameSite(http.SameSiteNoneMode)
+		}
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
 		c.Next()
-
-		// 解决跨域 Cookie 丢失问题：在跨域请求中，现代浏览器要求 Cookie 必须设置 SameSite=None 和 Secure 属性
-		header := c.Writer.Header()
-		if cookies, ok := header["Set-Cookie"]; ok {
-			for i, cookie := range cookies {
-				header["Set-Cookie"][i] = cookie + "; SameSite=None; Secure"
-			}
-		}
 	}
 }

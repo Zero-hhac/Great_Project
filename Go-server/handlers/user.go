@@ -65,7 +65,8 @@ func UpdateUserProfileAPI(c *gin.Context) {
 	}
 
 	// 更新 cookie 中的 nickname（如果改变了）
-	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", false, false)
+	isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
+	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", isSecure, true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "修改成功", "user": user})
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"starry-server/models"
 
@@ -36,8 +37,10 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("user_id", strconv.Itoa(int(user.ID)), 3600*24*7, "/", "", false, true)
-	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", false, false)
+	// 为了支持跨站 Cookie，必须设置 Secure=true 且 SameSite=None
+	isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
+	c.SetCookie("user_id", strconv.Itoa(int(user.ID)), 3600*24*7, "/", "", isSecure, true)
+	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", isSecure, true)
 	c.Redirect(http.StatusFound, "/")
 }
 
@@ -64,9 +67,11 @@ func LoginAPI(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("user_id", strconv.Itoa(int(user.ID)), 3600*24*7, "/", "", false, true)
-	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", false, false)
-	
+	// 为了支持跨站 Cookie，必须设置 Secure=true 且 SameSite=None
+	isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
+	c.SetCookie("user_id", strconv.Itoa(int(user.ID)), 3600*24*7, "/", "", isSecure, true)
+	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", isSecure, true) // 改为 true，跨站要求 Secure
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "登录成功",
 		"user_id":  user.ID,
@@ -113,8 +118,9 @@ func RegisterAPI(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("user_id", strconv.Itoa(int(user.ID)), 3600*24*7, "/", "", false, true)
-	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", false, false)
+	isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
+	c.SetCookie("user_id", strconv.Itoa(int(user.ID)), 3600*24*7, "/", "", isSecure, true)
+	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", isSecure, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":  "注册成功",
@@ -176,16 +182,22 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("user_id", strconv.Itoa(int(user.ID)), 3600*24*7, "/", "", false, true)
-	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", false, false)
+	isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
+	c.SetCookie("user_id", strconv.Itoa(int(user.ID)), 3600*24*7, "/", "", isSecure, true)
+	c.SetCookie("nickname", user.Nickname, 3600*24*7, "/", "", isSecure, true)
 	c.Redirect(http.StatusFound, "/")
 }
 
 // Logout 处理登出
 func Logout(c *gin.Context) {
-	c.SetCookie("user_id", "", -1, "/", "", false, true)
-	c.SetCookie("nickname", "", -1, "/", "", false, false)
-	
-	// 无论从哪里登出，都统一重定向到 Next.js 的登录页面
-	c.Redirect(http.StatusFound, "http://localhost:3002/")
+	isSecure := c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil
+	c.SetCookie("user_id", "", -1, "/", "", isSecure, true)
+	c.SetCookie("nickname", "", -1, "/", "", isSecure, true)
+
+	// API 请求返回 JSON，普通页面重定向
+	if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+		c.JSON(http.StatusOK, gin.H{"message": "已退出登录"})
+		return
+	}
+	c.Redirect(http.StatusFound, "/login")
 }
