@@ -8,8 +8,8 @@ tmp_build/
 .DS_Store
 .idea/
 .vscode/
-qianduan111/node_modules/
-qianduan111/dist/
+starry-web/node_modules/
+starry-web/dist/
 Go-server/tmp_build/
 Go-server/main.exe
 Go-server/.env

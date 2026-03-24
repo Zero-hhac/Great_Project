@@ -82,9 +82,9 @@ git clone https://github.com/Zero-hhac/Great_Project.git
 cd Great_Project
 ```
 
-### 2. 唤醒后端服务
-1. 进入目录：`cd Go-server`
-2. 配置环境变量 `.env`：
+### 2. 后端配置与运行 (Go-server)
+1. 进入后端目录：`cd Go-server`
+2. 配置 `.env` 文件（目前已配置为云端 Neon 数据库）：
    ```env
    # PostgreSQL 示例
    DATABASE_URL=postgres://user:pass@host:port/dbname?sslmode=require
@@ -93,7 +93,10 @@ cd Great_Project
    DB_PASSWORD=your_password
    PORT=:8080
    ```
-3. 启动引擎：`go run main.go`
+3. 运行后端：
+   ```bash
+   go run main.go
+   ```
 
 ### 3. 点亮前端界面
 1. 进入目录：`cd starry-web`
