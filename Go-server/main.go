@@ -46,7 +46,7 @@ func main() {
 		auth.POST("/api/photos/update", handlers.UpdatePhotosAPI)
 		auth.GET("/api/profile", handlers.ShowProfile) // Global profile
 		auth.POST("/api/profile", handlers.UpdateProfileAPI)
-		
+
 		auth.GET("/api/user/profile", handlers.GetUserProfileAPI)
 		auth.POST("/api/user/profile", handlers.UpdateUserProfileAPI)
 		auth.POST("/logout", handlers.Logout)
@@ -63,9 +63,22 @@ func main() {
 		auth.GET("/api/articles/:id", handlers.ArticleDetailAPI)
 		auth.POST("/api/articles/:id/like", handlers.ToggleArticleLikeAPI)
 
+		// 合集相关
+		auth.GET("/api/collections", handlers.ListCollections)
+		auth.POST("/api/collections", handlers.CreateCollection)
+		auth.GET("/api/collections/:id/articles", handlers.GetCollectionArticles)
+
 		// 管理员接口
-		auth.GET("/api/admin/stats", handlers.AdminStatsAPI)
-		auth.GET("/api/admin/users", handlers.AdminUsersAPI)
+		adminGroup := auth.Group("/api/admin")
+		{
+			adminGroup.GET("/stats", handlers.AdminStatsAPI)
+			adminGroup.GET("/users", handlers.AdminUsersAPI)
+			adminGroup.DELETE("/users/:id", handlers.AdminDeleteUserAPI)
+			adminGroup.GET("/articles", handlers.AdminArticlesAPI)
+			adminGroup.DELETE("/articles/:id", handlers.AdminDeleteArticleAPI)
+			adminGroup.GET("/comments", handlers.AdminCommentsAPI)
+			adminGroup.DELETE("/comments/:id", handlers.AdminDeleteCommentAPI)
+		}
 
 		// 评论相关
 		auth.POST("/comments/create", handlers.CreateComment)

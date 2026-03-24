@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"Go-learn/models"
 	"net/http"
 	"strings"
 
@@ -10,21 +11,30 @@ import (
 // AuthRequired 登录认证中间件
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, err := c.Cookie("user_id")
-		if err != nil || userID == "" {
-			// 如果是 API 请求，返回 401 JSON，而不是重定向
+		userIDStr, err := c.Cookie("user_id")
+		if err != nil || userIDStr == "" {
 			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "请先登录"})
-				c.Abort()
-				return
+			} else {
+				c.Redirect(http.StatusFound, "/")
 			}
-			
-			// 普通页面请求，重定向到 Next.js 登录页
-			c.Redirect(http.StatusFound, "http://localhost:3002/")
 			c.Abort()
 			return
 		}
-		c.Set("user_id", userID)
+
+		var user models.User
+		if err := models.DB.First(&user, userIDStr).Error; err != nil {
+			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "用户认证失败"})
+			} else {
+				c.Redirect(http.StatusFound, "/")
+			}
+			c.Abort()
+			return
+		}
+
+		c.Set("user", user)
+		c.Set("user_id", userIDStr)
 		c.Next()
 	}
 }

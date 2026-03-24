@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -130,9 +131,9 @@ func CreateArticle(c *gin.Context) {
 		profile := LoadProfile()
 		nickname, _ := c.Cookie("nickname")
 		c.HTML(http.StatusOK, "article-create", gin.H{
-			"title": "写文章",
-			"error": "标题和内容不能为空",
-			"atitle": title,
+			"title":   "写文章",
+			"error":   "标题和内容不能为空",
+			"atitle":  title,
 			"content": content,
 			"profile": gin.H{
 				"Name":     profile.Name,
@@ -163,9 +164,9 @@ func CreateArticle(c *gin.Context) {
 		profile := LoadProfile()
 		nickname, _ := c.Cookie("nickname")
 		c.HTML(http.StatusOK, "article-create", gin.H{
-			"title": "写文章",
-			"error": "发布失败，请重试",
-			"atitle": title,
+			"title":   "写文章",
+			"error":   "发布失败，请重试",
+			"atitle":  title,
 			"content": content,
 			"profile": gin.H{
 				"Name":     profile.Name,
@@ -284,7 +285,7 @@ func ShowEditArticle(c *gin.Context) {
 
 	profile := LoadProfile()
 	c.HTML(http.StatusOK, "article-edit", gin.H{
-		"title": "编辑文章",
+		"title":   "编辑文章",
 		"article": article,
 		"profile": gin.H{
 			"Name":     profile.Name,
@@ -381,8 +382,9 @@ func ArticleDetailAPI(c *gin.Context) {
 // CreateArticleAPI 创建文章 API
 func CreateArticleAPI(c *gin.Context) {
 	var input struct {
-		Title   string `json:"title" binding:"required"`
-		Content string `json:"content" binding:"required"`
+		Title        string `json:"title" binding:"required"`
+		Content      string `json:"content" binding:"required"`
+		CollectionID *uint  `json:"collection_id"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -394,9 +396,10 @@ func CreateArticleAPI(c *gin.Context) {
 	userID, _ := strconv.Atoi(userIDStr.(string))
 
 	article := models.Article{
-		Title:   input.Title,
-		Content: input.Content,
-		UserID:  uint(userID),
+		Title:        input.Title,
+		Content:      input.Content,
+		UserID:       uint(userID),
+		CollectionID: input.CollectionID,
 	}
 
 	if err := models.DB.Create(&article).Error; err != nil {
@@ -411,14 +414,18 @@ func CreateArticleAPI(c *gin.Context) {
 func UpdateArticleAPI(c *gin.Context) {
 	id := c.Param("id")
 	var input struct {
-		Title   string `json:"title" binding:"required"`
-		Content string `json:"content" binding:"required"`
+		Title        string `json:"title" binding:"required"`
+		Content      string `json:"content" binding:"required"`
+		CollectionID *uint  `json:"collection_id"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
+		log.Printf("[UpdateArticleAPI] BindJSON error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
 		return
 	}
+
+	log.Printf("[UpdateArticleAPI] Updating article %s: title=%s, collection_id=%v", id, input.Title, input.CollectionID)
 
 	var article models.Article
 	if err := models.DB.First(&article, id).Error; err != nil {
@@ -428,16 +435,29 @@ func UpdateArticleAPI(c *gin.Context) {
 
 	userIDStr, _ := c.Get("user_id")
 	userID, _ := strconv.Atoi(userIDStr.(string))
-	nickname, _ := c.Cookie("nickname")
 
-	if article.UserID != uint(userID) && nickname != "admin" {
+	// 从 context 获取用户信息，这样更可靠
+	userVal, _ := c.Get("user")
+	user := userVal.(models.User)
+
+	if article.UserID != uint(userID) && user.Username != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "没有权限修改此文章"})
 		return
 	}
 
 	article.Title = input.Title
 	article.Content = input.Content
-	models.DB.Save(&article)
+	article.CollectionID = input.CollectionID
+
+	// 使用 Select 明确指定要更新的字段，包括 collection_id（即使它为 nil/NULL）
+	if err := models.DB.Model(&article).Select("Title", "Content", "CollectionID").Updates(map[string]interface{}{
+		"title":         article.Title,
+		"content":       article.Content,
+		"collection_id": article.CollectionID,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "保存文章失败"})
+		return
+	}
 
 	c.JSON(http.StatusOK, article)
 }

@@ -101,6 +101,11 @@
   border: 1px solid rgba(107, 216, 203, 0.2);
 }
 
+.stat-card-red {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 107, 107, 0.05) 100%);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
 .text-gradient-vibrant {
   background: linear-gradient(135deg, #6bd8cb 0%, #3a86ff 100%);
   -webkit-background-clip: text;
@@ -110,15 +115,21 @@
 /* ─── 文章正文排版 ─────────────────────────────────────────────── */
 /* 适用于 dangerouslySetInnerHTML 渲染的 Markdown HTML 内容 */
 .article-body {
-  /* 正文基础：17px，行高 1.85 适合中文阅读 */
-  font-size: 17px;
-  line-height: 1.85;
-  color: rgba(228, 226, 228, 0.85);
+  /* 正文基础：18px，行高 1.9 适合中文阅读，增加易读性 */
+  font-size: 18px;
+  line-height: 1.9;
+  color: rgba(228, 226, 228, 0.95);
   font-family: "Manrope", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   /* 限制最大行宽，约 35字/行 是中文最舒适的阅读宽度 */
   word-break: break-word;
   overflow-wrap: break-word;
+  /* 增加背景对比度，减少透明度带来的干扰 */
+  background: rgba(19, 19, 21, 0.7);
+  padding: 2.5rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
 }
 
 /* 段落：上下各 1.2em */

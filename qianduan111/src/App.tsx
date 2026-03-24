@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Home, BookOpen, Library, Settings, Mail, Share2, Heart, Github, ThumbsUp, Search, Menu, Bookmark, User, ChevronRight, PenTool, Send, LogOut, Edit3, Trash2, Plus, X, Check, AlertCircle, ArrowLeft, Clock, MessageSquare, MessageCircle, Link, Image as ImageIcon, Shield, BarChart3, Users, Activity } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { Home, BookOpen, Library, Settings, Mail, Share2, Heart, Github, ThumbsUp, Search, Menu, Bookmark, User, ChevronRight, PenTool, Send, LogOut, Edit3, Trash2, Plus, X, Check, AlertCircle, ArrowLeft, Clock, MessageSquare, MessageCircle, Link, Image as ImageIcon, Shield, BarChart3, Users, Activity, TrendingUp, FileText, Eye, Star, PieChart as PieChartIcon, RefreshCw, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Page = 'home' | 'stories' | 'collections' | 'write' | 'settings' | 'profile' | 'article' | 'admin';
+type Page = 'home' | 'stories' | 'collections' | 'write' | 'settings' | 'profile' | 'article' | 'admin' | 'collection_detail';
 type AuthPage = 'login' | 'register';
 
 interface UserInfo { id: number; username: string; nickname: string; avatar: string; cover?: string; bio: string; email?: string; qq?: string; github?: string; }
-interface Article { id: number; title: string; content: string; created_at: string; user: UserInfo; likes_count: number; is_liked: boolean; }
+interface Collection { id: number; title: string; description: string; user: UserInfo; count?: number; }
+interface Article { id: number; title: string; content: string; created_at: string; user: UserInfo; likes_count: number; is_liked: boolean; collection_id?: number; collection?: Collection; }
 interface Comment { id: number; content: string; created_at: string; user: UserInfo; likes_count: number; is_liked: boolean; }
 
 const PAGE_BGS: Record<Page, string> = {
@@ -19,11 +20,12 @@ const PAGE_BGS: Record<Page, string> = {
   settings: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2600',
   profile: 'https://images.unsplash.com/photo-1506744626753-1fa44df62243?auto=format&fit=crop&q=80&w=2600',
   article: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=2600',
-  admin: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2600'
+  admin: '', // 管理后台使用纯色背景
+  collection_detail: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2600'
 };
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
-const API = 'http://localhost:8080';
+const API = ''; // 使用 Vite 代理，或硬编码为 'http://localhost:8080'
 
 async function apiFetch(path: string, opts?: RequestInit) {
   const r = await fetch(API + path, { credentials: 'include', ...opts });
@@ -44,11 +46,13 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClos
 }
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
-const NavItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNode; label: string; active?: boolean; onClick: () => void }) => (
+const NavItem = ({ icon, label, active = false, onClick }: { icon: React.ReactElement; label: string; active?: boolean; onClick: () => void }) => (
   <button onClick={onClick}
-    className={`group flex items-center gap-4 py-3 px-4 rounded-lg transition-all hover:translate-x-1 duration-200 w-full text-left ${active ? 'text-primary bg-surface/50' : 'text-on-surface-variant hover:bg-surface-container'}`}>
-    <span className={active ? 'text-primary' : ''}>{icon}</span>
-    <span className="font-label tracking-widest uppercase text-[10px] font-medium">{label}</span>
+    className={`group flex items-center gap-5 py-4 px-6 rounded-2xl transition-all hover:translate-x-1.5 duration-300 w-full text-left ${active ? 'text-primary bg-primary/5 border border-primary/20 shadow-lg shadow-primary/5' : 'text-on-surface-variant/70 hover:bg-white/[0.03] hover:text-on-surface border border-transparent'}`}>
+    <span className={`transition-transform duration-300 group-hover:scale-110 ${active ? 'text-primary' : ''}`}>
+      {React.cloneElement(icon, { size: 22 } as any)}
+    </span>
+    <span className="font-label tracking-[0.2em] uppercase text-xs font-bold">{label}</span>
   </button>
 );
 
@@ -62,7 +66,7 @@ const Sidebar = ({ activePage, onNavigate, user }: { activePage: Page; onNavigat
     <nav className="flex flex-col gap-1 relative z-10">
       <NavItem icon={<Home size={18} />} label="首页" active={activePage === 'home'} onClick={() => onNavigate('home')} />
       <NavItem icon={<BookOpen size={18} />} label="故事" active={activePage === 'stories'} onClick={() => onNavigate('stories')} />
-      <NavItem icon={<Library size={18} />} label="合集" active={activePage === 'collections'} onClick={() => onNavigate('collections')} />
+      <NavItem icon={<Library size={18} />} label="合集" active={activePage === 'collections' || activePage === 'collection_detail'} onClick={() => onNavigate('collections')} />
       <NavItem icon={<PenTool size={18} />} label="写作" active={activePage === 'write'} onClick={() => onNavigate('write')} />
       {user?.username === 'admin' && <NavItem icon={<Shield size={18} />} label="管理" active={activePage === 'admin'} onClick={() => onNavigate('admin')} />}
       <NavItem icon={<Settings size={18} />} label="设置" active={activePage === 'settings'} onClick={() => onNavigate('settings')} />
@@ -87,7 +91,7 @@ const MobileNavItem = ({ icon, label, active = false, onClick }: { icon: React.R
   </button>
 );
 
-const MobileNav = ({ activePage, onNavigate }: { activePage: Page; onNavigate: (p: Page) => void }) => (
+const MobileNav = ({ activePage, onNavigate, user }: { activePage: Page; onNavigate: (p: Page) => void; user: UserInfo | null }) => (
   <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50 overflow-hidden shadow-2xl border-t border-white/5">
     <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundImage: 'linear-gradient(to right, rgba(16, 16, 18, 0.92), rgba(16, 16, 18, 0.98)), url("https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=1200")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
     <div className="flex justify-around items-center p-4 relative z-10">
@@ -95,7 +99,7 @@ const MobileNav = ({ activePage, onNavigate }: { activePage: Page; onNavigate: (
       <MobileNavItem icon={<BookOpen size={20} />} label="故事" active={activePage === 'stories'} onClick={() => onNavigate('stories')} />
       <MobileNavItem icon={<PenTool size={20} />} label="写作" active={activePage === 'write'} onClick={() => onNavigate('write')} />
       {user?.username === 'admin' && <MobileNavItem icon={<Shield size={20} />} label="管理" active={activePage === 'admin'} onClick={() => onNavigate('admin')} />}
-      <MobileNavItem icon={<Library size={20} />} label="合集" active={activePage === 'collections'} onClick={() => onNavigate('collections')} />
+      <MobileNavItem icon={<Library size={20} />} label="合集" active={activePage === 'collections' || activePage === 'collection_detail'} onClick={() => onNavigate('collections')} />
       <MobileNavItem icon={<Settings size={20} />} label="设置" active={activePage === 'settings'} onClick={() => onNavigate('settings')} />
     </div>
   </nav>
@@ -154,11 +158,106 @@ const UserMenu = ({ onNavigate, user, onLogout }: { onNavigate: (p: Page) => voi
   );
 };
 
-const TopBar = ({ onNavigate, user, onLogout }: { onNavigate: (p: Page) => void; user: UserInfo | null; onLogout: () => void }) => (
+// ─── Collection Detail page ──────────────────────────────────────────────────
+const CollectionDetailPage = ({ colId, onViewArticle, onBack }: { colId: number; onViewArticle: (id: number) => void; onBack: () => void }) => {
+  const [collection, setCollection] = useState<Collection | null>(null);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    console.log('[CollectionDetail] Loading articles for colId:', colId);
+    try {
+      // 获取合集信息
+      const [cRes, aRes] = await Promise.all([
+        apiFetch('/api/collections'),
+        apiFetch(`/api/collections/${colId}/articles`)
+      ]);
+      
+      if (cRes.ok && aRes.ok) {
+        const cols = await cRes.json();
+        const arts = await aRes.json();
+        console.log('[CollectionDetail] Articles received:', arts);
+        const target = cols.find((c: any) => c.id === colId);
+        setCollection(target);
+        setArticles(Array.isArray(arts) ? arts : []);
+      }
+    } catch (err) {
+      console.error('[CollectionDetail] Load error:', err);
+    } finally { setLoading(false); }
+  }, [colId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading) return <div className="p-32 text-center text-primary italic animate-pulse">调取星枢合集数据中...</div>;
+
+  return (
+    <div className="max-w-screen-xl mx-auto px-8 py-32 space-y-16">
+      <header className="space-y-6">
+        <button onClick={onBack} className="inline-flex items-center gap-2 text-on-surface-variant/40 hover:text-primary transition-colors font-label text-[10px] uppercase tracking-widest group">
+          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> 返回合集列表
+        </button>
+        <div className="space-y-2">
+          <h2 className="text-[10px] uppercase tracking-[0.4em] text-primary font-bold">合集归档</h2>
+          <h1 className="font-headline text-6xl italic leading-tight text-white">{collection?.title || '未命名合集'}</h1>
+          <p className="text-on-surface-variant/60 max-w-2xl text-lg italic leading-relaxed">{collection?.description || '暂无描述'}</p>
+        </div>
+        <div className="flex items-center gap-4 pt-4 border-t border-white/5">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <User size={14} />
+            </div>
+            <span className="text-xs font-bold text-on-surface-variant/60">创建者：{collection?.user?.nickname || collection?.user?.username}</span>
+          </div>
+          <div className="h-4 w-px bg-white/10" />
+          <span className="text-xs font-bold text-on-surface-variant/40 uppercase tracking-widest">{articles.length} 篇叙事</span>
+        </div>
+      </header>
+
+      <section>
+        {articles.length === 0 ? (
+          <div className="p-20 text-center rounded-[2rem] border border-dashed border-white/10">
+            <BookOpen size={48} className="mx-auto mb-4 opacity-10" />
+            <p className="text-on-surface-variant/40 italic">笔尖尚且静默，合集中暂无篇章...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {articles.map((a, i) => (
+              <motion.div key={a.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                whileHover={{ scale: 1.02 }} onClick={() => onViewArticle(a.id)}
+                className="group article-card-surface p-8 space-y-4 cursor-pointer">
+                <div className="flex justify-between items-start">
+                  <span className="font-mono text-primary/30 text-xs select-none">#{String(i + 1).padStart(2, '0')}</span>
+                  <p className="text-[10px] text-on-surface-variant/30">{new Date(a.created_at).toLocaleDateString('zh-CN')}</p>
+                </div>
+                <h3 className="font-headline text-2xl italic group-hover:text-primary transition-colors line-clamp-2">{a.title}</h3>
+                <p className="text-sm text-on-surface-variant/60 line-clamp-3 leading-relaxed">{a.content?.replace(/[#*`]/g, '').slice(0, 100)}...</p>
+                <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {a.user?.avatar ? <img src={a.user.avatar} className="w-5 h-5 rounded-full object-cover" /> : <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary"><User size={10} /></div>}
+                    <span className="text-[10px] text-on-surface-variant/40 font-bold">{a.user?.nickname || a.user?.username}</span>
+                  </div>
+                  <span className="text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity font-bold uppercase tracking-widest">阅读全文 →</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+};
+
+const TopBar = ({ onNavigate, user, onLogout, onBack }: { onNavigate: (p: Page) => void; user: UserInfo | null; onLogout: () => void; onBack: () => void }) => (
   <header className="lg:hidden sticky top-0 w-full z-50 shadow-md">
     <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundImage: 'linear-gradient(to right, rgba(16, 16, 18, 0.9), rgba(16, 16, 18, 0.98)), url("https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80&w=2000")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
     <div className="flex justify-between items-center px-6 py-4 relative z-10">
-      <h1 className="font-headline italic text-xl text-on-surface cursor-pointer" onClick={() => onNavigate('home')}>宏大叙事</h1>
+      <div className="flex items-center gap-4">
+        <button onClick={onBack} className="p-2 text-on-surface-variant/60 hover:text-primary transition-colors">
+          <ArrowLeft size={20} />
+        </button>
+        <h1 className="font-headline italic text-xl text-on-surface cursor-pointer" onClick={() => onNavigate('home')}>宏大叙事</h1>
+      </div>
       <div className="flex items-center gap-2">
         <button className="p-2 text-on-surface-variant hover:text-primary transition-colors"><Search size={20} /></button>
         <UserMenu onNavigate={onNavigate} user={user} onLogout={onLogout} />
@@ -167,11 +266,17 @@ const TopBar = ({ onNavigate, user, onLogout }: { onNavigate: (p: Page) => void;
   </header>
 );
 
-const DesktopTopBar = ({ onNavigate, user, onLogout }: { onNavigate: (p: Page) => void; user: UserInfo | null; onLogout: () => void }) => (
+const DesktopTopBar = ({ onNavigate, user, onLogout, onBack }: { onNavigate: (p: Page) => void; user: UserInfo | null; onLogout: () => void; onBack: () => void }) => (
   <nav className="fixed top-0 w-full z-50 lg:pl-80 shadow-md">
     <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundImage: 'linear-gradient(to bottom, rgba(16, 16, 18, 0.92), rgba(16, 16, 18, 0.98)), url("https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80&w=2000")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
     <div className="flex justify-between items-center px-8 h-20 w-full max-w-screen-2xl mx-auto relative z-10">
-      <div className="text-2xl font-headline text-primary italic cursor-pointer" onClick={() => onNavigate('home')}>宏大叙事</div>
+      <div className="flex items-center gap-6">
+        {/* 后退按钮 */}
+        <button onClick={onBack} className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-on-surface-variant/60 hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all group shadow-inner">
+          <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+        </button>
+        <div className="text-2xl font-headline text-primary italic cursor-pointer" onClick={() => onNavigate('home')}>宏大叙事</div>
+      </div>
       <div className="hidden md:flex items-center gap-8">
         <button onClick={() => onNavigate('stories')} className="text-on-surface-variant hover:text-on-surface transition-colors font-label text-[10px] tracking-widest uppercase">随笔</button>
         <button onClick={() => onNavigate('collections')} className="text-on-surface-variant hover:text-on-surface transition-colors font-label text-[10px] tracking-widest uppercase">归档</button>
@@ -300,6 +405,9 @@ const StoriesPage = ({ user, onToast, onViewArticle }: { user: UserInfo | null; 
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [showArchive, setShowArchive] = useState<number | null>(null);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [archiving, setArchiving] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -307,6 +415,33 @@ const StoriesPage = ({ user, onToast, onViewArticle }: { user: UserInfo | null; 
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const fetchCollections = async () => {
+    try {
+      const r = await apiFetch('/api/collections');
+      if (r.ok) setCollections(await r.json());
+    } catch { }
+  };
+
+  const archiveTo = async (article: Article, colId: number | null) => {
+    setArchiving(true);
+    try {
+      const r = await apiFetch(`/api/articles/edit/${article.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: article.title,
+          content: article.content,
+          collection_id: colId
+        })
+      });
+      if (r.ok) {
+        onToast(colId ? '文章已成功归档' : '文章已从合集移除', 'ok');
+        setShowArchive(null);
+        load();
+      }
+    } catch { onToast('网络错误', 'err'); } finally { setArchiving(false); }
+  };
 
   const del = async (id: number) => {
     if (!confirm('确定要删除这篇文章吗？')) return;
@@ -351,6 +486,32 @@ const StoriesPage = ({ user, onToast, onViewArticle }: { user: UserInfo | null; 
               </div>
               {user && (user.id === a.user?.id || user.username === 'admin') && (
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-1" onClick={e => e.stopPropagation()}>
+                  <div className="relative">
+                    <button onClick={e => { e.stopPropagation(); if (showArchive === a.id) setShowArchive(null); else { setShowArchive(a.id); fetchCollections(); } }}
+                      className={`p-2 rounded-lg transition-colors ${a.collection_id ? 'bg-primary/10 text-primary' : 'hover:bg-primary/10 text-on-surface-variant hover:text-primary'}`}>
+                      <Library size={16} />
+                    </button>
+                    <AnimatePresence>
+                      {showArchive === a.id && (
+                        <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-2 w-56 p-3 rounded-xl bg-surface-container border border-primary/20 shadow-2xl z-50 backdrop-blur-xl">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/40 mb-3 border-b border-white/5 pb-2">归档至合集</p>
+                          <div className="space-y-1 max-h-48 overflow-y-auto scrollbar-hide">
+                            <button onClick={() => archiveTo(a, null)} className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-all flex items-center justify-between ${!a.collection_id ? 'bg-primary/10 text-primary' : 'hover:bg-white/5 text-on-surface-variant hover:text-primary'}`}>
+                              <span>移出合集</span>
+                              {!a.collection_id && <Check size={10} />}
+                            </button>
+                            {collections.map(c => (
+                              <button key={c.id} onClick={() => archiveTo(a, c.id)} className={`w-full text-left px-3 py-2 rounded-lg text-[11px] transition-all flex items-center justify-between ${a.collection_id === c.id ? 'bg-primary/10 text-primary' : 'hover:bg-white/5 text-on-surface-variant hover:text-primary'}`}>
+                                <span className="truncate">{c.title}</span>
+                                {a.collection_id === c.id && <Check size={10} />}
+                              </button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                   <button onClick={e => { e.stopPropagation(); del(a.id); }} disabled={deleting === a.id}
                     className="p-2 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors">
                     <Trash2 size={16} />
@@ -371,6 +532,9 @@ const ArticleDetailPage = ({ articleId, user, onToast, onBack }: { articleId: nu
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [posting, setPosting] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [archiving, setArchiving] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -382,6 +546,37 @@ const ArticleDetailPage = ({ articleId, user, onToast, onBack }: { articleId: nu
   }, [articleId]);
 
   useEffect(() => { load(); window.scrollTo(0, 0); }, [load]);
+
+  const fetchCollections = async () => {
+    try {
+      const r = await apiFetch('/api/collections');
+      if (r.ok) setCollections(await r.json());
+    } catch { }
+  };
+
+  const archiveTo = async (colId: number | null) => {
+    if (!data) return;
+    setArchiving(true);
+    try {
+      const r = await apiFetch(`/api/articles/edit/${articleId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: data.article.title,
+          content: data.article.content,
+          collection_id: colId
+        })
+      });
+      if (r.ok) {
+        onToast(colId ? '文章已成功归档' : '文章已从合集移除', 'ok');
+        setShowArchive(false);
+        load();
+      } else {
+        const d = await r.json();
+        onToast(d.error || '归档失败', 'err');
+      }
+    } catch { onToast('网络错误', 'err'); } finally { setArchiving(false); }
+  };
 
   const postComment = async () => {
     if (!comment.trim()) return;
@@ -485,6 +680,64 @@ const ArticleDetailPage = ({ articleId, user, onToast, onBack }: { articleId: nu
             <Clock size={14} />
             <span className="text-sm font-label">{readTime} 分钟阅读</span>
           </div>
+          {/* 归档按钮：仅作者和管理员可见 */}
+          {(user?.id === article.user?.id || user?.username === 'admin') && (
+            <>
+              <div className="h-8 w-px bg-white/10" />
+              <div className="relative">
+                <button 
+                  onClick={() => {
+                    if (!showArchive) fetchCollections();
+                    setShowArchive(!showArchive);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-full border transition-all text-[10px] font-bold uppercase tracking-widest ${article.collection_id ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-white/5 border-white/10 text-on-surface-variant hover:bg-white/10 hover:border-primary/20 hover:text-primary'}`}
+                >
+                  <Library size={12} />
+                  {article.collection_id ? '已归档' : '归档'}
+                </button>
+                
+                <AnimatePresence>
+                  {showArchive && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute left-0 mt-3 w-64 p-4 rounded-2xl bg-surface-container border border-primary/20 shadow-2xl z-50 backdrop-blur-xl"
+                    >
+                      <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">选择目标合集</span>
+                        <button onClick={() => setShowArchive(false)} className="text-on-surface-variant/40 hover:text-white"><X size={14} /></button>
+                      </div>
+                      <div className="space-y-1.5 max-h-60 overflow-y-auto scrollbar-hide">
+                        <button 
+                          onClick={() => archiveTo(null)}
+                          disabled={archiving || !article.collection_id}
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-xs transition-all flex items-center justify-between group ${!article.collection_id ? 'bg-primary/5 text-primary/40 cursor-default' : 'hover:bg-white/5 text-on-surface-variant hover:text-primary'}`}
+                        >
+                          <span>不归档 / 移出合集</span>
+                          {!article.collection_id && <Check size={12} />}
+                        </button>
+                        {collections.map(c => (
+                          <button 
+                            key={c.id}
+                            onClick={() => archiveTo(c.id)}
+                            disabled={archiving || article.collection_id === c.id}
+                            className={`w-full text-left px-4 py-2.5 rounded-xl text-xs transition-all flex items-center justify-between group ${article.collection_id === c.id ? 'bg-primary/10 text-primary cursor-default' : 'hover:bg-white/5 text-on-surface-variant hover:text-primary'}`}
+                          >
+                            <span className="truncate">{c.title}</span>
+                            {article.collection_id === c.id && <Check size={12} />}
+                          </button>
+                        ))}
+                      </div>
+                      {collections.length === 0 && (
+                        <p className="text-[10px] text-center py-4 text-on-surface-variant/30 italic">暂无可选合集</p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -651,12 +904,22 @@ const WritePage = ({ onToast, onNavigate }: { onToast: (msg: string, type: 'ok' 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [selectedCol, setSelectedCol] = useState<number | null>(null);
+
+  useEffect(() => {
+    apiFetch('/api/collections').then(r => r.json()).then(data => setCollections(Array.isArray(data) ? data : [])).catch(() => {});
+  }, []);
 
   const publish = async () => {
     if (!title.trim() || !content.trim()) { onToast('标题和内容不能为空', 'err'); return; }
     setLoading(true);
     try {
-      const r = await apiFetch('/api/articles/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, content }) });
+      const r = await apiFetch('/api/articles/create', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ title, content, collection_id: selectedCol }) 
+      });
       if (r.ok) { onToast('发布成功！', 'ok'); setTitle(''); setContent(''); onNavigate('stories'); }
       else { const d = await r.json(); onToast(d.error || '发布失败', 'err'); }
     } catch { onToast('网络错误', 'err'); } finally { setLoading(false); }
@@ -674,6 +937,21 @@ const WritePage = ({ onToast, onNavigate }: { onToast: (msg: string, type: 'ok' 
             <label className="text-[10px] uppercase tracking-widest text-on-surface-variant/40 font-bold">标题</label>
             <input type="text" placeholder="输入您的标题..." value={title} onChange={e => setTitle(e.target.value)}
               className="w-full bg-transparent border-b border-white/10 py-4 font-headline text-4xl italic focus:border-primary outline-none transition-colors placeholder:text-white/10" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase tracking-widest text-on-surface-variant/40 font-bold">归属合集（可选）</label>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setSelectedCol(null)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${selectedCol === null ? 'bg-primary/20 border-primary text-primary' : 'bg-surface/40 border-white/5 text-on-surface-variant hover:border-primary/30'}`}>
+                无合集
+              </button>
+              {collections.map(c => (
+                <button key={c.id} onClick={() => setSelectedCol(c.id)}
+                  className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border ${selectedCol === c.id ? 'bg-primary/20 border-primary text-primary' : 'bg-surface/40 border-white/5 text-on-surface-variant hover:border-primary/30'}`}>
+                  {c.title}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-[10px] uppercase tracking-widest text-on-surface-variant/40 font-bold">正文（支持 Markdown）</label>
@@ -913,175 +1191,683 @@ const ProfilePage = ({ user, setUser, onToast, onViewArticle }: { user: UserInfo
 };
 
 // ─── Collections page ─────────────────────────────────────────────────────────
-const CollectionsPage = () => {
-  const collections = [
-    { id: 1, title: '自然与荒野', count: 12, description: '探索大地的原始力量，从冰川到森林的静谧之旅。' },
-    { id: 2, title: '城市孤独', count: 8, description: '在繁华都市的缝隙中，寻找那些被遗忘的灵魂。' },
-    { id: 3, title: '数字时代的哲学', count: 15, description: '当比特构筑世界，我们如何定义真实与存在？' },
-    { id: 4, title: '远古的回响', count: 10, description: '追寻历史的足迹，倾听那些尘封已久的古老叙事。' },
-    { id: 5, title: '光影随笔', count: 20, description: '用镜头和文字，捕捉那些转瞬即逝的视觉诗篇。' },
-  ];
+const CollectionsPage = ({ onToast, onViewCollection }: { onToast: (msg: string, type: 'ok' | 'err') => void; onViewCollection: (id: number) => void }) => {
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newCol, setNewCol] = useState({ title: '', description: '' });
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await apiFetch('/api/collections');
+      if (r.ok) {
+        const data = await r.json();
+        setCollections(Array.isArray(data) ? data : []);
+      }
+    } catch { } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const create = async () => {
+    if (!newCol.title.trim()) return;
+    try {
+      const r = await apiFetch('/api/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCol)
+      });
+      if (r.ok) {
+        onToast('合集创建成功', 'ok');
+        setNewCol({ title: '', description: '' });
+        setShowCreate(false);
+        load();
+      }
+    } catch { onToast('创建失败', 'err'); }
+  };
+
   return (
     <div className="max-w-screen-xl mx-auto px-8 py-32 space-y-20">
-      <header className="space-y-4">
-        <h2 className="text-[10px] uppercase tracking-[0.4em] text-primary font-bold">精选合集</h2>
-        <h1 className="font-headline text-6xl italic">叙事的主题</h1>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+        <div className="space-y-4">
+          <h2 className="text-[10px] uppercase tracking-[0.4em] text-primary font-bold">精选合集</h2>
+          <h1 className="font-headline text-6xl italic leading-tight">叙事的主题</h1>
+        </div>
+        <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-6 py-3 bg-primary/10 border border-primary/20 text-primary rounded-full font-label text-[10px] tracking-widest uppercase font-bold hover:bg-primary/20 transition-all">
+          <Plus size={16} /> 创建新合集
+        </button>
       </header>
-      <div className="grid grid-cols-1 gap-6">
-        {collections.map((c, i) => (
-          <motion.div key={c.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
-            className="group article-card-surface p-12 flex items-center justify-between cursor-pointer">
-            <div className="flex items-center gap-12">
-              <span className="font-mono text-primary text-sm opacity-40">0{i + 1}</span>
+
+      <AnimatePresence>
+        {showCreate && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+            className="p-8 rounded-3xl bg-surface-container border border-primary/20 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-headline text-2xl italic">定义新的叙事维度</h3>
+              <button onClick={() => setShowCreate(false)} className="text-on-surface-variant/40 hover:text-white"><X size={20} /></button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <h3 className="font-headline text-4xl italic group-hover:text-primary transition-colors">{c.title}</h3>
-                <p className="text-sm text-on-surface-variant/60 max-w-md">{c.description}</p>
+                <label className="text-[10px] uppercase tracking-widest text-on-surface-variant/40 font-bold">合集名称</label>
+                <input type="text" value={newCol.title} onChange={e => setNewCol(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full bg-surface/50 border border-white/5 rounded-xl px-4 py-3 focus:border-primary/30 outline-none text-sm" placeholder="例如：极简主义..." />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest text-on-surface-variant/40 font-bold">描述</label>
+                <input type="text" value={newCol.description} onChange={e => setNewCol(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full bg-surface/50 border border-white/5 rounded-xl px-4 py-3 focus:border-primary/30 outline-none text-sm" placeholder="简短描述这个合集的灵魂..." />
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">查看 {c.count} 篇随笔</span>
-              <ChevronRight size={20} className="text-primary group-hover:translate-x-1 transition-transform" />
+            <div className="flex justify-end">
+              <button onClick={create} className="px-8 py-3 bg-primary text-on-primary rounded-full font-label text-[10px] tracking-widest uppercase font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20">确认创建</button>
             </div>
           </motion.div>
-        ))}
-      </div>
+        )}
+      </AnimatePresence>
+
+      {loading ? (
+        <div className="text-center py-20 text-on-surface-variant/30 italic">寻找主题中...</div>
+      ) : collections.length === 0 ? (
+        <div className="text-center py-20 article-card-surface">
+          <Library size={48} className="mx-auto mb-4 opacity-10" />
+          <p className="text-on-surface-variant/40 italic">尚无合集，点击上方按钮开启新的叙事维度</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6">
+          {collections.map((c, i) => (
+            <motion.div key={c.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+              onClick={() => onViewCollection(c.id)}
+              className="group article-card-surface p-12 flex items-center justify-between cursor-pointer">
+              <div className="flex items-center gap-12">
+                <span className="font-mono text-primary text-sm opacity-40 select-none">{String(i + 1).padStart(2, '0')}</span>
+                <div className="space-y-2">
+                  <h3 className="font-headline text-4xl italic group-hover:text-primary transition-colors">{c.title}</h3>
+                  <p className="text-sm text-on-surface-variant/60 max-w-md leading-relaxed">{c.description || '这个合集还未被定义。'}</p>
+                  <div className="flex items-center gap-2 pt-2 text-[10px] text-on-surface-variant/30 uppercase tracking-widest font-bold">
+                    <User size={10} /> {c.user?.nickname || c.user?.username}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">归档于此</span>
+                <ChevronRight size={20} className="text-primary group-hover:translate-x-1 transition-transform" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
 // ─── Admin Dashboard ─────────────────────────────────────────────────────────
-const AdminDashboard = () => {
+type AdminTab = 'overview' | 'users' | 'articles' | 'comments';
+
+const CHART_COLORS = ['#6bd8cb', '#3a86ff', '#8338ec', '#ff6b6b', '#fbbf24'];
+const PIE_COLORS = ['#6bd8cb', '#3a86ff', '#8338ec', '#fbbf24'];
+
+const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
 
-  useEffect(() => {
-    Promise.all([
-      apiFetch('/api/admin/stats').then(r => r.json()),
-      apiFetch('/api/admin/users').then(r => r.json())
-    ]).then(([s, u]) => {
-      setStats(s);
-      setUsers(u);
-    }).catch(console.error).finally(() => setLoading(false));
+  async function fetchWithStatus(path: string) {
+    const r = await apiFetch(path);
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      throw new Error(body.error || `请求 ${path} 失败 (${r.status})`);
+    }
+    return r.json();
+  }
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 检查当前用户是否为管理员
+      if (user?.username !== 'admin') {
+        throw new Error('权限不足，请使用管理员账号登录');
+      }
+
+      const [sRes, uRes, aRes, cRes] = await Promise.all([
+        fetchWithStatus('/api/admin/stats'),
+        fetchWithStatus('/api/admin/users'),
+        fetchWithStatus('/api/admin/articles'),
+        fetchWithStatus('/api/admin/comments'),
+      ]);
+      setStats(sRes);
+      setUsers(Array.isArray(uRes) ? uRes : []);
+      setArticles(Array.isArray(aRes) ? aRes : []);
+      setComments(Array.isArray(cRes) ? cRes : []);
+    } catch (e: any) {
+      setError(e.message || '连接服务器失败');
+      console.error('[Admin] fetchAll error:', e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const handleDelete = useCallback(async (type: 'user' | 'article' | 'comment', id: number) => {
+    if (!confirm('确定要删除吗？此操作不可恢复。')) return;
+    try {
+      const r = await apiFetch(`/api/admin/${type}s/${id}`, { method: 'DELETE' });
+      if (r.ok) {
+        setToast({ msg: '删除成功', type: 'ok' });
+        fetchAll();
+      } else {
+        const data = await r.json();
+        setToast({ msg: data.error || '删除失败', type: 'err' });
+      }
+    } catch {
+      setToast({ msg: '网络错误', type: 'err' });
+    }
+  }, [fetchAll]);
+
+  const filteredUsers = users.filter(u =>
+    u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.nickname?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredArticles = articles.filter(a =>
+    a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.user?.nickname?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredComments = comments.filter(c =>
+    c.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.user?.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.article_title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const pieData = stats ? [
+    { name: '文章', value: Number(stats.total_articles) || 0 },
+    { name: '评论', value: Number(stats.total_comments) || 0 },
+    { name: '用户', value: Number(stats.total_users) || 0 },
+    { name: '点赞', value: Number(stats.total_likes) || 0 },
+  ].filter(d => d.value > 0) : [];
+
+  const formatDate = (d: string) => {
+    const date = new Date(d);
+    return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  };
 
   if (loading) return <div className="p-32 text-center text-primary italic animate-pulse">调取星枢数据中...</div>;
 
+  if (error) return (
+    <div className="max-w-screen-xl mx-auto px-4 md:px-8 py-32 text-center space-y-6">
+      <AlertCircle size={48} className="mx-auto text-red-400" />
+      <h2 className="text-xl font-bold text-on-surface">数据加载失败</h2>
+      <p className="text-on-surface-variant max-w-md mx-auto">{error}</p>
+      <button onClick={fetchAll}
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary font-bold hover:opacity-90 transition">
+        <RefreshCw size={16} /> 重新加载
+      </button>
+    </div>
+  );
+
+  const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'overview', label: '概览', icon: <BarChart3 size={16} /> },
+    { id: 'users', label: '用户', icon: <Users size={16} /> },
+    { id: 'articles', label: '文章', icon: <FileText size={16} /> },
+    { id: 'comments', label: '评论', icon: <MessageCircle size={16} /> },
+  ];
+
   return (
-    <div className="max-w-screen-xl mx-auto px-8 py-32 space-y-16">
+    <div className="max-w-screen-xl mx-auto px-4 md:px-8 py-24 md:py-32 space-y-8">
+      <AnimatePresence>
+        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      </AnimatePresence>
+
+      {/* Header */}
       <header className="space-y-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] tracking-[0.2em] uppercase font-bold">
           <Shield size={12} /> 管理中枢
         </div>
-        <h1 className="font-headline text-6xl italic">星枢概览</h1>
-        <p className="text-on-surface-variant/60 max-w-xl">在这里审视星野叙事的一切流动与共鸣。</p>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 className="font-headline text-4xl md:text-6xl italic">星枢概览</h1>
+            <p className="text-on-surface-variant/60 text-sm mt-2">在这里审视星野叙事的一切流动与共鸣。</p>
+          </div>
+          <button onClick={fetchAll} className="self-start md:self-auto flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-wider uppercase hover:bg-primary/20 transition-colors">
+            <RefreshCw size={14} /> 刷新数据
+          </button>
+        </div>
       </header>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[
-          { label: '注册用户', value: stats?.total_users, icon: <Users className="text-blue-400" /> },
-          { label: '发布文章', value: stats?.total_articles, icon: <BookOpen className="text-primary" /> },
-          { label: '互动评论', value: stats?.total_comments, icon: <MessageCircle className="text-purple-400" /> }
-        ].map((item, i) => (
-          <div key={i} className="p-8 article-card-surface space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-widest text-on-surface-variant/40 font-bold">{item.label}</span>
-              {item.icon}
-            </div>
-            <p className="text-5xl font-headline italic">{item.value}</p>
-          </div>
+      {/* Tab Navigation */}
+      <div className="flex gap-1 p-1 rounded-2xl bg-surface/50 border border-white/5 w-fit">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all ${
+              activeTab === tab.id
+                ? 'bg-primary text-[#0a0a0c] shadow-lg shadow-primary/20'
+                : 'text-on-surface-variant/50 hover:text-on-surface-variant hover:bg-white/[0.03]'
+            }`}
+          >
+            {tab.icon} {tab.label}
+          </button>
         ))}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="p-8 article-card-surface space-y-8">
-          <div className="flex items-center justify-between">
-            <h3 className="font-headline text-2xl italic">流量趋势 (7D)</h3>
-            <Activity size={18} className="text-primary opacity-40" />
-          </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats?.traffic}>
-                <defs>
-                  <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6bd8cb" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6bd8cb" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#161618', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                  itemStyle={{ color: '#6bd8cb', fontSize: '12px' }}
-                />
-                <Area type="monotone" dataKey="views" stroke="#6bd8cb" fillOpacity={1} fill="url(#colorViews)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Search bar for data tabs */}
+      {activeTab !== 'overview' && (
+        <div className="relative max-w-md">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30" />
+          <input
+            type="text"
+            placeholder={activeTab === 'users' ? '搜索用户...' : activeTab === 'articles' ? '搜索文章...' : '搜索评论...'}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 rounded-xl bg-surface/80 border border-white/5 text-sm text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all"
+          />
         </div>
+      )}
 
-        <div className="p-8 article-card-surface space-y-8">
-          <div className="flex items-center justify-between">
-            <h3 className="font-headline text-2xl italic">注册动态 (7D)</h3>
-            <Users size={18} className="text-blue-400 opacity-40" />
+      {/* ── Overview Tab ── */}
+      {activeTab === 'overview' && (
+        <div className="space-y-8">
+          {/* Stats Grid - 4 cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {[
+              {
+                label: '注册用户',
+                value: stats?.total_users,
+                today: stats?.today?.users,
+                icon: <Users size={20} />,
+                gradient: 'stat-card-blue',
+                iconBg: 'bg-blue-500/10 text-blue-400',
+              },
+              {
+                label: '发布文章',
+                value: stats?.total_articles,
+                today: stats?.today?.articles,
+                icon: <FileText size={20} />,
+                gradient: 'stat-card-teal',
+                iconBg: 'bg-primary/10 text-primary',
+              },
+              {
+                label: '互动评论',
+                value: stats?.total_comments,
+                today: stats?.today?.comments,
+                icon: <MessageCircle size={20} />,
+                gradient: 'stat-card-purple',
+                iconBg: 'bg-purple-500/10 text-purple-400',
+              },
+              {
+                label: '累计点赞',
+                value: stats?.total_likes,
+                today: null,
+                icon: <Heart size={20} />,
+                gradient: '',
+                iconBg: 'bg-red-500/10 text-red-400',
+                border: 'border-red-500/20',
+              },
+            ].map((card, i) => (
+              <motion.div
+                key={card.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className={`p-5 md:p-6 rounded-2xl bg-surface/60 backdrop-blur-sm border border-white/5 space-y-4 hover:border-white/10 transition-colors ${card.gradient}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconBg}`}>
+                    {card.icon}
+                  </div>
+                  {card.today != null && Number(card.today) > 0 && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                      <ArrowUpRight size={10} /> +{card.today}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-3xl md:text-4xl font-headline italic">{card.value ?? 0}</p>
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-on-surface-variant/50 font-bold mt-1">{card.label}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats?.reg_trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#161618', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                  itemStyle={{ color: '#3a86ff', fontSize: '12px' }}
-                />
-                <Bar dataKey="count" fill="#3a86ff" radius={[4, 4, 0, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
 
-      {/* User Table */}
-      <div className="p-8 article-card-surface space-y-8">
-        <h3 className="font-headline text-2xl italic">用户名册</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/40">
-                <th className="pb-4 font-bold">用户</th>
-                <th className="pb-4 font-bold">账号</th>
-                <th className="pb-4 font-bold">注册时间</th>
-                <th className="pb-4 font-bold text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {users.map(u => (
-                <tr key={u.id} className="group hover:bg-white/[0.02] transition-colors">
-                  <td className="py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-surface">
-                        {u.avatar ? <img src={u.avatar} className="w-full h-full object-cover" /> : <User size={14} className="m-auto mt-2 opacity-20" />}
-                      </div>
-                      <span className="text-sm font-medium">{u.nickname}</span>
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Articles Trend */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-2 p-6 rounded-2xl bg-surface/60 backdrop-blur-sm border border-white/5 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-headline text-xl italic">发文趋势</h3>
+                  <p className="text-[10px] tracking-wider uppercase text-on-surface-variant/40 font-bold mt-1">近 7 天真实数据</p>
+                </div>
+                <div className="flex items-center gap-4 text-[10px] font-bold">
+                  <span className="flex items-center gap-1.5 text-primary"><span className="w-2 h-2 rounded-full bg-primary" /> 文章</span>
+                  <span className="flex items-center gap-1.5 text-purple-400"><span className="w-2 h-2 rounded-full bg-purple-400" /> 评论</span>
+                </div>
+              </div>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats?.weekly_articles}>
+                    <defs>
+                      <linearGradient id="gradArticles" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6bd8cb" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#6bd8cb" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gradComments" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8338ec" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#8338ec" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                    <XAxis dataKey="date" stroke="rgba(255,255,255,0.15)" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(255,255,255,0.15)" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'rgba(20,20,22,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)' }}
+                      itemStyle={{ fontSize: '12px' }}
+                      labelStyle={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}
+                    />
+                    <Area type="monotone" dataKey="count" name="文章" stroke="#6bd8cb" fillOpacity={1} fill="url(#gradArticles)" strokeWidth={2} dot={{ fill: '#6bd8cb', r: 3 }} activeDot={{ r: 5 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats?.weekly_comments}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                    <XAxis dataKey="date" stroke="rgba(255,255,255,0.15)" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(255,255,255,0.15)" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'rgba(20,20,22,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)' }}
+                      itemStyle={{ fontSize: '12px' }}
+                      labelStyle={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}
+                    />
+                    <Area type="monotone" dataKey="count" name="评论" stroke="#8338ec" fillOpacity={1} fill="url(#gradComments)" strokeWidth={2} dot={{ fill: '#8338ec', r: 3 }} activeDot={{ r: 5 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+
+            {/* Content Distribution Pie + Today Stats */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="p-6 rounded-2xl bg-surface/60 backdrop-blur-sm border border-white/5 space-y-6">
+              <div>
+                <h3 className="font-headline text-xl italic">内容分布</h3>
+                <p className="text-[10px] tracking-wider uppercase text-on-surface-variant/40 font-bold mt-1">平台数据总览</p>
+              </div>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'rgba(20,20,22,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '12px' }}
+                      labelStyle={{ color: 'rgba(255,255,255,0.4)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {pieData.map((d, i) => (
+                  <div key={d.name} className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[i] }} />
+                    <span className="text-xs text-on-surface-variant/60">{d.name}</span>
+                    <span className="text-xs font-bold ml-auto">{d.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Today stats */}
+              <div className="pt-4 border-t border-white/5 space-y-3">
+                <p className="text-[10px] tracking-wider uppercase text-on-surface-variant/40 font-bold">今日动态</p>
+                {[
+                  { label: '新用户', value: stats?.today?.users, color: 'text-blue-400' },
+                  { label: '新文章', value: stats?.today?.articles, color: 'text-primary' },
+                  { label: '新评论', value: stats?.today?.comments, color: 'text-purple-400' },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-xs text-on-surface-variant/50">{item.label}</span>
+                    <span className={`text-sm font-bold ${item.color}`}>+{item.value ?? 0}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Bottom Row: Top Articles + Recent Users */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Articles */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="p-6 rounded-2xl bg-surface/60 backdrop-blur-sm border border-white/5 space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-headline text-xl italic">热门文章</h3>
+                  <p className="text-[10px] tracking-wider uppercase text-on-surface-variant/40 font-bold mt-1">按点赞排序 TOP 5</p>
+                </div>
+                <Star size={16} className="text-yellow-400/40" />
+              </div>
+              <div className="space-y-3">
+                {stats?.top_articles?.length > 0 ? stats.top_articles.map((a: any, i: number) => (
+                  <div key={a.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/[0.02] transition-colors group">
+                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${i < 3 ? 'bg-primary/10 text-primary' : 'bg-white/5 text-on-surface-variant/30'}`}>
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{a.title}</p>
                     </div>
-                  </td>
-                  <td className="py-4 text-xs text-on-surface-variant/60">@{u.username}</td>
-                  <td className="py-4 text-xs text-on-surface-variant/40">{new Date(u.created_at).toLocaleDateString()}</td>
-                  <td className="py-4 text-right">
-                    <button className="p-2 rounded-lg hover:bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 transition-all">
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <span className="flex items-center gap-1 text-xs text-red-400/70">
+                      <Heart size={12} /> {a.likes_count}
+                    </span>
+                  </div>
+                )) : (
+                  <p className="text-xs text-on-surface-variant/30 text-center py-8">暂无文章数据</p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Recent Users */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="p-6 rounded-2xl bg-surface/60 backdrop-blur-sm border border-white/5 space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-headline text-xl italic">最近注册</h3>
+                  <p className="text-[10px] tracking-wider uppercase text-on-surface-variant/40 font-bold mt-1">最新加入的 5 位用户</p>
+                </div>
+                <Users size={16} className="text-blue-400/40" />
+              </div>
+              <div className="space-y-3">
+                {stats?.recent_users?.length > 0 ? stats.recent_users.map((u: any) => (
+                  <div key={u.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/[0.02] transition-colors">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-surface flex-shrink-0">
+                      {u.avatar ? <img src={u.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={16} className="text-on-surface-variant/20" /></div>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{u.nickname || u.username}</p>
+                      <p className="text-[10px] text-on-surface-variant/40">@{u.username}</p>
+                    </div>
+                    <span className="text-[10px] text-on-surface-variant/30 whitespace-nowrap">{formatDate(u.created_at)}</span>
+                  </div>
+                )) : (
+                  <p className="text-xs text-on-surface-variant/30 text-center py-8">暂无用户数据</p>
+                )}
+              </div>
+            </motion.div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ── Users Tab ── */}
+      {activeTab === 'users' && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-surface/60 backdrop-blur-sm border border-white/5 overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+            <h3 className="font-headline text-xl italic">用户管理</h3>
+            <span className="text-[10px] tracking-wider uppercase text-on-surface-variant/40 font-bold">共 {filteredUsers.length} 位用户</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.15em] text-on-surface-variant/30">
+                  <th className="py-3 px-6 font-bold">用户</th>
+                  <th className="py-3 px-4 font-bold">邮箱</th>
+                  <th className="py-3 px-4 font-bold">GitHub</th>
+                  <th className="py-3 px-4 font-bold">注册时间</th>
+                  <th className="py-3 px-6 font-bold text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {filteredUsers.map(u => (
+                  <tr key={u.id} className="group hover:bg-white/[0.02] transition-colors">
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full overflow-hidden bg-surface flex-shrink-0">
+                          {u.avatar ? <img src={u.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={14} className="text-on-surface-variant/20" /></div>}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{u.nickname || '未设置'}</p>
+                          <p className="text-[10px] text-on-surface-variant/40">@{u.username}</p>
+                        </div>
+                        {u.username === 'admin' && (
+                          <span className="text-[8px] tracking-wider uppercase font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">管理员</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-xs text-on-surface-variant/50">{u.email || '—'}</td>
+                    <td className="py-4 px-4 text-xs text-on-surface-variant/50">{u.github || '—'}</td>
+                    <td className="py-4 px-4 text-xs text-on-surface-variant/30">{formatDate(u.created_at)}</td>
+                    <td className="py-4 px-6 text-right">
+                      {u.username !== 'admin' && (
+                        <button onClick={() => handleDelete('user', u.id)} className="p-2 rounded-lg hover:bg-red-500/10 text-red-400/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Articles Tab ── */}
+      {activeTab === 'articles' && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-surface/60 backdrop-blur-sm border border-white/5 overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+            <h3 className="font-headline text-xl italic">文章管理</h3>
+            <span className="text-[10px] tracking-wider uppercase text-on-surface-variant/40 font-bold">共 {filteredArticles.length} 篇文章</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.15em] text-on-surface-variant/30">
+                  <th className="py-3 px-6 font-bold">文章标题</th>
+                  <th className="py-3 px-4 font-bold">作者</th>
+                  <th className="py-3 px-4 font-bold">
+                    <span className="flex items-center gap-1"><Heart size={10} /> 点赞</span>
+                  </th>
+                  <th className="py-3 px-4 font-bold">发布时间</th>
+                  <th className="py-3 px-6 font-bold text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {filteredArticles.map(a => (
+                  <tr key={a.id} className="group hover:bg-white/[0.02] transition-colors">
+                    <td className="py-4 px-6">
+                      <p className="text-sm font-medium truncate max-w-xs">{a.title}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-surface flex-shrink-0">
+                          {a.user?.avatar ? <img src={a.user.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={10} className="text-on-surface-variant/20" /></div>}
+                        </div>
+                        <span className="text-xs text-on-surface-variant/60">{a.user?.nickname || a.user?.username}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="text-xs font-bold text-red-400/70">{a.likes_count ?? 0}</span>
+                    </td>
+                    <td className="py-4 px-4 text-xs text-on-surface-variant/30">{formatDate(a.created_at)}</td>
+                    <td className="py-4 px-6 text-right">
+                      <button onClick={() => handleDelete('article', a.id)} className="p-2 rounded-lg hover:bg-red-500/10 text-red-400/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Comments Tab ── */}
+      {activeTab === 'comments' && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-surface/60 backdrop-blur-sm border border-white/5 overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+            <h3 className="font-headline text-xl italic">评论管理</h3>
+            <span className="text-[10px] tracking-wider uppercase text-on-surface-variant/40 font-bold">共 {filteredComments.length} 条评论</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.15em] text-on-surface-variant/30">
+                  <th className="py-3 px-6 font-bold">评论内容</th>
+                  <th className="py-3 px-4 font-bold">评论者</th>
+                  <th className="py-3 px-4 font-bold">所属文章</th>
+                  <th className="py-3 px-4 font-bold">
+                    <span className="flex items-center gap-1"><Heart size={10} /> 点赞</span>
+                  </th>
+                  <th className="py-3 px-4 font-bold">时间</th>
+                  <th className="py-3 px-6 font-bold text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {filteredComments.map(c => (
+                  <tr key={c.id} className="group hover:bg-white/[0.02] transition-colors">
+                    <td className="py-4 px-6">
+                      <p className="text-sm truncate max-w-xs">{c.content}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-surface flex-shrink-0">
+                          {c.user?.avatar ? <img src={c.user.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={10} className="text-on-surface-variant/20" /></div>}
+                        </div>
+                        <span className="text-xs text-on-surface-variant/60">{c.user?.nickname || c.user?.username}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <p className="text-xs text-on-surface-variant/40 truncate max-w-[150px]">{c.article_title || '—'}</p>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className="text-xs font-bold text-red-400/70">{c.likes_count ?? 0}</span>
+                    </td>
+                    <td className="py-4 px-4 text-xs text-on-surface-variant/30 whitespace-nowrap">{formatDate(c.created_at)}</td>
+                    <td className="py-4 px-6 text-right">
+                      <button onClick={() => handleDelete('comment', c.id)} className="p-2 rounded-lg hover:bg-red-500/10 text-red-400/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
@@ -1137,6 +1923,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [prevPage, setPrevPage] = useState<Page>('stories');
   const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<number | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -1147,6 +1934,16 @@ export default function App() {
     setSelectedArticleId(id);
     setCurrentPage('article');
   }, [currentPage]);
+
+  const viewCollection = useCallback((id: number) => {
+    setPrevPage(currentPage as Page);
+    setSelectedCollectionId(id);
+    setCurrentPage('collection_detail');
+  }, [currentPage]);
+
+  const goBack = useCallback(() => {
+    setCurrentPage(prevPage);
+  }, [prevPage]);
 
   // Check login on mount
   useEffect(() => {
@@ -1181,9 +1978,10 @@ export default function App() {
     switch (currentPage) {
       case 'home': return <HomePage onNavigate={setCurrentPage} onViewArticle={viewArticle} />;
       case 'stories': return <StoriesPage user={user} onToast={showToast} onViewArticle={viewArticle} />;
-      case 'collections': return <CollectionsPage />;
+      case 'collections': return <CollectionsPage onToast={showToast} onViewCollection={viewCollection} />;
+      case 'collection_detail': return selectedCollectionId ? <CollectionDetailPage colId={selectedCollectionId} onViewArticle={viewArticle} onBack={() => setCurrentPage('collections')} /> : <CollectionsPage onToast={showToast} onViewCollection={viewCollection} />;
       case 'write': return <WritePage onToast={showToast} onNavigate={setCurrentPage} />;
-      case 'admin': return user?.username === 'admin' ? <AdminDashboard /> : <HomePage onNavigate={setCurrentPage} onViewArticle={viewArticle} />;
+      case 'admin': return user?.username === 'admin' ? <AdminDashboard user={user} /> : <HomePage onNavigate={setCurrentPage} onViewArticle={viewArticle} />;
       case 'profile': return <ProfilePage user={user} setUser={u => setUser(u)} onToast={showToast} onViewArticle={viewArticle} />;
       case 'settings': return <SettingsPage user={user} />;
       case 'article': return selectedArticleId ? <ArticleDetailPage articleId={selectedArticleId} user={user} onToast={showToast} onBack={() => setCurrentPage(prevPage)} /> : <HomePage onNavigate={setCurrentPage} onViewArticle={viewArticle} />;
@@ -1197,27 +1995,35 @@ export default function App() {
       <AnimatePresence>
         {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
       </AnimatePresence>
-      <Sidebar activePage={currentPage} onNavigate={setCurrentPage} user={user} />
-      <MobileNav activePage={currentPage} onNavigate={setCurrentPage} />
-      <TopBar onNavigate={setCurrentPage} user={user} onLogout={handleLogout} />
-      <DesktopTopBar onNavigate={setCurrentPage} user={user} onLogout={handleLogout} />
+      <Sidebar activePage={currentPage} onNavigate={(p) => { setPrevPage(currentPage); setCurrentPage(p); }} user={user} />
+      <MobileNav activePage={currentPage} onNavigate={(p) => { setPrevPage(currentPage); setCurrentPage(p); }} user={user} />
+      <TopBar onNavigate={(p) => { setPrevPage(currentPage); setCurrentPage(p); }} user={user} onLogout={handleLogout} onBack={goBack} />
+      <DesktopTopBar onNavigate={(p) => { setPrevPage(currentPage); setCurrentPage(p); }} user={user} onLogout={handleLogout} onBack={goBack} />
       <main className="lg:ml-80 min-h-screen relative flex flex-col overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundImage: `linear-gradient(to right bottom, rgba(16, 16, 18, 0.75), rgba(16, 16, 18, 0.95)), url("${PAGE_BGS[currentPage]}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', transition: 'background-image 0.8s ease-in-out' }} />
+        <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundImage: PAGE_BGS[currentPage] ? `linear-gradient(to right bottom, rgba(16, 16, 18, 0.75), rgba(16, 16, 18, 0.95)), url("${PAGE_BGS[currentPage]}")` : 'none', backgroundColor: PAGE_BGS[currentPage] ? undefined : '#131315', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', transition: 'background-image 0.8s ease-in-out' }} />
         <div className="relative z-10 flex-1 flex flex-col min-h-screen">
           <AnimatePresence mode="wait">
             <motion.div key={currentPage} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="flex-1">
               {renderPage()}
             </motion.div>
           </AnimatePresence>
-          <footer className="w-full py-20 border-t border-white/5 relative overflow-hidden flex flex-col items-center justify-center gap-8 mt-20">
-            <div className="absolute inset-0 pointer-events-none z-0" style={{ backgroundImage: 'linear-gradient(to right, rgba(16, 16, 18, 0.8), rgba(16, 16, 18, 0.95)), url("https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=2400")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-            <div className="relative z-10 flex flex-col items-center gap-8">
-              <div className="font-headline text-lg text-on-surface-variant/60 italic">宏大叙事</div>
-              <div className="flex gap-12 text-[10px] tracking-widest uppercase text-on-surface-variant/40 font-label">
-                <a className="hover:text-primary transition-colors duration-500" href="#">隐私</a>
-                <a className="hover:text-primary transition-colors duration-500" href="#">条款</a>
+          <footer className="w-full py-24 border-t border-white/5 relative overflow-hidden flex flex-col items-center justify-center gap-10 mt-20">
+            {/* 更深邃、符合主题的页脚背景 */}
+            <div className="absolute inset-0 pointer-events-none z-0">
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0c] via-[#101012]/95 to-[#08080a]" />
+              <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
+            </div>
+            <div className="relative z-10 flex flex-col items-center gap-10">
+              <div className="font-headline text-2xl text-primary/60 italic tracking-widest">宏大叙事</div>
+              <div className="flex gap-16 text-[11px] tracking-[0.3em] uppercase text-on-surface-variant/30 font-label font-bold">
+                <a className="hover:text-primary transition-all duration-500 hover:tracking-[0.4em]" href="#">隐私政策</a>
+                <a className="hover:text-primary transition-all duration-500 hover:tracking-[0.4em]" href="#">服务条款</a>
+                <a className="hover:text-primary transition-all duration-500 hover:tracking-[0.4em]" href="#">关于我们</a>
               </div>
-              <p className="text-[10px] text-on-surface-variant/40 font-label">© 2024 宏大叙事. 为静谧时刻打造.</p>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-[10px] text-on-surface-variant/20 font-label uppercase tracking-widest">Digital Sanctuary for Your Thoughts</p>
+                <p className="text-[10px] text-on-surface-variant/20 font-label tracking-widest">© 2026 宏大叙事. 为静谧时刻打造.</p>
+              </div>
             </div>
           </footer>
         </div>

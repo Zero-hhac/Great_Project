@@ -70,5 +70,5 @@ func InitDB() {
 	}
 
 	// 自动迁移表结构
-	DB.AutoMigrate(&User{}, &Article{}, &Comment{}, &Profile{}, &Photo{}, &ArticleLike{}, &CommentLike{})
+	DB.AutoMigrate(&User{}, &Collection{}, &Article{}, &Comment{}, &Profile{}, &Photo{}, &ArticleLike{}, &CommentLike{})
 }
