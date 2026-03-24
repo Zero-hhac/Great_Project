@@ -25,7 +25,9 @@ const PAGE_BGS: Record<Page, string> = {
 };
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
-const API = ''; // 使用 Vite 代理，或硬编码为 'http://localhost:8080'
+const API = import.meta.env.PROD 
+  ? 'https://great-project-3j4m.onrender.com' 
+  : ''; // 开发环境使用 Vite 代理
 
 async function apiFetch(path: string, opts?: RequestInit) {
   const r = await fetch(API + path, { credentials: 'include', ...opts });
