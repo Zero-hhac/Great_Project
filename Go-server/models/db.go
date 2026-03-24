@@ -42,7 +42,20 @@ func InitDB() {
 
 	// 如果 DATABASE_URL 连接失败或未设置，尝试使用分项配置连接 MySQL
 	if DB == nil {
-		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=true",
+		// 先连接到 mysql 服务器而不指定数据库，以防数据库不存在
+		dsnNoDB := fmt.Sprintf("%s:%s@tcp(%s:%s)/?charset=utf8mb4&parseTime=True&loc=Local",
+			config.DBUser,
+			config.DBPassword,
+			config.DBHost,
+			config.DBPort,
+		)
+		dbTemp, err := gorm.Open(mysql.Open(dsnNoDB), &gorm.Config{})
+		if err == nil {
+			// 尝试创建数据库
+			dbTemp.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", config.DBName))
+		}
+
+		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			config.DBUser,
 			config.DBPassword,
 			config.DBHost,
@@ -53,7 +66,7 @@ func InitDB() {
 		if err != nil {
 			log.Fatal("Failed to connect to database:", err)
 		}
-		log.Println("Connected to MySQL database via individual config with TLS")
+		log.Println("Connected to MySQL database via individual config")
 	}
 
 	// 自动迁移表结构

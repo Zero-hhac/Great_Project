@@ -63,6 +63,10 @@ func main() {
 		auth.GET("/api/articles/:id", handlers.ArticleDetailAPI)
 		auth.POST("/api/articles/:id/like", handlers.ToggleArticleLikeAPI)
 
+		// 管理员接口
+		auth.GET("/api/admin/stats", handlers.AdminStatsAPI)
+		auth.GET("/api/admin/users", handlers.AdminUsersAPI)
+
 		// 评论相关
 		auth.POST("/comments/create", handlers.CreateComment)
 		auth.POST("/api/comments/create", handlers.CreateCommentAPI)

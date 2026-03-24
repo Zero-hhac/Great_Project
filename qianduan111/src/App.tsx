@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Home, BookOpen, Library, Settings, Mail, Share2, Heart, Github, ThumbsUp, Search, Menu, Bookmark, User, ChevronRight, PenTool, Send, LogOut, Edit3, Trash2, Plus, X, Check, AlertCircle, ArrowLeft, Clock, MessageSquare, MessageCircle, Link, Image as ImageIcon } from 'lucide-react';
+import { Home, BookOpen, Library, Settings, Mail, Share2, Heart, Github, ThumbsUp, Search, Menu, Bookmark, User, ChevronRight, PenTool, Send, LogOut, Edit3, Trash2, Plus, X, Check, AlertCircle, ArrowLeft, Clock, MessageSquare, MessageCircle, Link, Image as ImageIcon, Shield, BarChart3, Users, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Page = 'home' | 'stories' | 'collections' | 'write' | 'settings' | 'profile' | 'article';
+type Page = 'home' | 'stories' | 'collections' | 'write' | 'settings' | 'profile' | 'article' | 'admin';
 type AuthPage = 'login' | 'register';
 
 interface UserInfo { id: number; username: string; nickname: string; avatar: string; cover?: string; bio: string; email?: string; qq?: string; github?: string; }
@@ -17,7 +18,8 @@ const PAGE_BGS: Record<Page, string> = {
   write: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=2600',
   settings: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2600',
   profile: 'https://images.unsplash.com/photo-1506744626753-1fa44df62243?auto=format&fit=crop&q=80&w=2600',
-  article: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=2600'
+  article: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=2600',
+  admin: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2600'
 };
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
@@ -62,6 +64,7 @@ const Sidebar = ({ activePage, onNavigate, user }: { activePage: Page; onNavigat
       <NavItem icon={<BookOpen size={18} />} label="故事" active={activePage === 'stories'} onClick={() => onNavigate('stories')} />
       <NavItem icon={<Library size={18} />} label="合集" active={activePage === 'collections'} onClick={() => onNavigate('collections')} />
       <NavItem icon={<PenTool size={18} />} label="写作" active={activePage === 'write'} onClick={() => onNavigate('write')} />
+      {user?.username === 'admin' && <NavItem icon={<Shield size={18} />} label="管理" active={activePage === 'admin'} onClick={() => onNavigate('admin')} />}
       <NavItem icon={<Settings size={18} />} label="设置" active={activePage === 'settings'} onClick={() => onNavigate('settings')} />
     </nav>
     <div className="mt-auto flex flex-col gap-6 relative z-10">
@@ -91,6 +94,7 @@ const MobileNav = ({ activePage, onNavigate }: { activePage: Page; onNavigate: (
       <MobileNavItem icon={<Home size={20} />} label="首页" active={activePage === 'home'} onClick={() => onNavigate('home')} />
       <MobileNavItem icon={<BookOpen size={20} />} label="故事" active={activePage === 'stories'} onClick={() => onNavigate('stories')} />
       <MobileNavItem icon={<PenTool size={20} />} label="写作" active={activePage === 'write'} onClick={() => onNavigate('write')} />
+      {user?.username === 'admin' && <MobileNavItem icon={<Shield size={20} />} label="管理" active={activePage === 'admin'} onClick={() => onNavigate('admin')} />}
       <MobileNavItem icon={<Library size={20} />} label="合集" active={activePage === 'collections'} onClick={() => onNavigate('collections')} />
       <MobileNavItem icon={<Settings size={20} />} label="设置" active={activePage === 'settings'} onClick={() => onNavigate('settings')} />
     </div>
@@ -122,6 +126,12 @@ const UserMenu = ({ onNavigate, user, onLogout }: { onNavigate: (p: Page) => voi
                 <User size={18} className="text-on-surface-variant group-hover:text-primary transition-colors" />
                 <span className="text-[10px] font-label uppercase tracking-widest font-bold">个人主页</span>
               </button>
+              {user?.username === 'admin' && (
+                <button onClick={() => { onNavigate('admin'); setOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/10 text-primary transition-colors text-left group">
+                  <Shield size={18} />
+                  <span className="text-[10px] font-label uppercase tracking-widest font-bold">管理后台</span>
+                </button>
+              )}
               <button onClick={() => { onNavigate('write'); setOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface transition-colors text-left group">
                 <PenTool size={18} className="text-on-surface-variant group-hover:text-primary transition-colors" />
                 <span className="text-[10px] font-label uppercase tracking-widest font-bold">写文章</span>
@@ -939,6 +949,143 @@ const CollectionsPage = () => {
   );
 };
 
+// ─── Admin Dashboard ─────────────────────────────────────────────────────────
+const AdminDashboard = () => {
+  const [stats, setStats] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      apiFetch('/api/admin/stats').then(r => r.json()),
+      apiFetch('/api/admin/users').then(r => r.json())
+    ]).then(([s, u]) => {
+      setStats(s);
+      setUsers(u);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="p-32 text-center text-primary italic animate-pulse">调取星枢数据中...</div>;
+
+  return (
+    <div className="max-w-screen-xl mx-auto px-8 py-32 space-y-16">
+      <header className="space-y-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] tracking-[0.2em] uppercase font-bold">
+          <Shield size={12} /> 管理中枢
+        </div>
+        <h1 className="font-headline text-6xl italic">星枢概览</h1>
+        <p className="text-on-surface-variant/60 max-w-xl">在这里审视星野叙事的一切流动与共鸣。</p>
+      </header>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[
+          { label: '注册用户', value: stats?.total_users, icon: <Users className="text-blue-400" /> },
+          { label: '发布文章', value: stats?.total_articles, icon: <BookOpen className="text-primary" /> },
+          { label: '互动评论', value: stats?.total_comments, icon: <MessageCircle className="text-purple-400" /> }
+        ].map((item, i) => (
+          <div key={i} className="p-8 article-card-surface space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-widest text-on-surface-variant/40 font-bold">{item.label}</span>
+              {item.icon}
+            </div>
+            <p className="text-5xl font-headline italic">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="p-8 article-card-surface space-y-8">
+          <div className="flex items-center justify-between">
+            <h3 className="font-headline text-2xl italic">流量趋势 (7D)</h3>
+            <Activity size={18} className="text-primary opacity-40" />
+          </div>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats?.traffic}>
+                <defs>
+                  <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6bd8cb" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6bd8cb" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#161618', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                  itemStyle={{ color: '#6bd8cb', fontSize: '12px' }}
+                />
+                <Area type="monotone" dataKey="views" stroke="#6bd8cb" fillOpacity={1} fill="url(#colorViews)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="p-8 article-card-surface space-y-8">
+          <div className="flex items-center justify-between">
+            <h3 className="font-headline text-2xl italic">注册动态 (7D)</h3>
+            <Users size={18} className="text-blue-400 opacity-40" />
+          </div>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats?.reg_trend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#161618', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                  itemStyle={{ color: '#3a86ff', fontSize: '12px' }}
+                />
+                <Bar dataKey="count" fill="#3a86ff" radius={[4, 4, 0, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* User Table */}
+      <div className="p-8 article-card-surface space-y-8">
+        <h3 className="font-headline text-2xl italic">用户名册</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/40">
+                <th className="pb-4 font-bold">用户</th>
+                <th className="pb-4 font-bold">账号</th>
+                <th className="pb-4 font-bold">注册时间</th>
+                <th className="pb-4 font-bold text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {users.map(u => (
+                <tr key={u.id} className="group hover:bg-white/[0.02] transition-colors">
+                  <td className="py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-surface">
+                        {u.avatar ? <img src={u.avatar} className="w-full h-full object-cover" /> : <User size={14} className="m-auto mt-2 opacity-20" />}
+                      </div>
+                      <span className="text-sm font-medium">{u.nickname}</span>
+                    </div>
+                  </td>
+                  <td className="py-4 text-xs text-on-surface-variant/60">@{u.username}</td>
+                  <td className="py-4 text-xs text-on-surface-variant/40">{new Date(u.created_at).toLocaleDateString()}</td>
+                  <td className="py-4 text-right">
+                    <button className="p-2 rounded-lg hover:bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Settings page ────────────────────────────────────────────────────────────
 const SettingsPage = ({ user }: { user: UserInfo | null }) => (
   <div className="max-w-screen-xl mx-auto px-8 py-32 space-y-20">
@@ -1036,6 +1183,7 @@ export default function App() {
       case 'stories': return <StoriesPage user={user} onToast={showToast} onViewArticle={viewArticle} />;
       case 'collections': return <CollectionsPage />;
       case 'write': return <WritePage onToast={showToast} onNavigate={setCurrentPage} />;
+      case 'admin': return user?.username === 'admin' ? <AdminDashboard /> : <HomePage onNavigate={setCurrentPage} onViewArticle={viewArticle} />;
       case 'profile': return <ProfilePage user={user} setUser={u => setUser(u)} onToast={showToast} onViewArticle={viewArticle} />;
       case 'settings': return <SettingsPage user={user} />;
       case 'article': return selectedArticleId ? <ArticleDetailPage articleId={selectedArticleId} user={user} onToast={showToast} onBack={() => setCurrentPage(prevPage)} /> : <HomePage onNavigate={setCurrentPage} onViewArticle={viewArticle} />;
