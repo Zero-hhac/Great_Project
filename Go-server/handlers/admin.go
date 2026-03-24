@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"Go-learn/models"
+	"starry-server/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -184,12 +184,12 @@ func AdminArticlesAPI(c *gin.Context) {
 	}
 
 	type ArticleWithUser struct {
-		ID         uint      `json:"id"`
-		Title      string    `json:"title"`
-		Content    string    `json:"content"`
-		UserID     uint      `json:"user_id"`
-		LikesCount int       `json:"likes_count"`
-		CreatedAt  time.Time `json:"created_at"`
+		ID         uint        `json:"id"`
+		Title      string      `json:"title"`
+		Content    string      `json:"content"`
+		UserID     uint        `json:"user_id"`
+		LikesCount int         `json:"likes_count"`
+		CreatedAt  time.Time   `json:"created_at"`
 		User       models.User `json:"user"`
 	}
 

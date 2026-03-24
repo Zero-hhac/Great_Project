@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"Go-learn/models"
 	"log"
 	"net/http"
+	"starry-server/models"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

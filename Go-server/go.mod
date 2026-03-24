@@ -1,4 +1,4 @@
-module Go-learn
+module starry-server
 
 go 1.25.0
 

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"Go-learn/models"
+	"starry-server/models"
 	"net/http"
 	"strings"
 

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"Go-learn/config"
-	"Go-learn/models"
+	"starry-server/config"
+	"starry-server/models"
 
 	"github.com/gin-gonic/gin"
 )

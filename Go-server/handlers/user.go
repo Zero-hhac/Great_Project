@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"Go-learn/models"
+	"starry-server/models"
 
 	"github.com/gin-gonic/gin"
 )

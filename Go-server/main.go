@@ -3,10 +3,10 @@ package main
 import (
 	"html/template"
 
-	"Go-learn/config"
-	"Go-learn/handlers"
-	"Go-learn/middleware"
-	"Go-learn/models"
+	"starry-server/config"
+	"starry-server/handlers"
+	"starry-server/middleware"
+	"starry-server/models"
 
 	"github.com/gin-gonic/gin"
 )

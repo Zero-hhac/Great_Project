@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"Go-learn/config"
+	"starry-server/config"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
