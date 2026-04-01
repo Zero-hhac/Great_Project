@@ -1,5 +1,5 @@
 const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD 
-  ? 'https://your-backend-url.onrender.com' // 替换为你的后端 Render URL
+  ? 'https://api.hahahahaha.icu' 
   : '');
 
 export async function apiFetch(path: string, opts?: RequestInit) {
