@@ -137,9 +137,8 @@ cd Great_Project
 项目已在 Render 平台完成自动化部署配置。每当 `main` 分支有代码推送时，Render 会自动触发构建。
 
 ### 2. 手动触发后端重新部署
-如果你需要手动强制后端服务重新从 GitHub 拉取最新代码并构建，可以访问以下 **Deploy Hook** 地址：
-- **后端部署钩子**：`https://api.render.com/deploy/srv-d71cednkijhs73ci9p50?key=NdK42GYzQhE`
-> **提示**：只需在浏览器中打开此 URL 或通过 `curl` 发送 GET 请求即可触发。
+如果你需要手动强制后端服务重新从 GitHub 拉取最新代码并构建，可以访问你在 Render 控制台配置的 **Deploy Hook** 地址。
+> **提示**：建议将该 URL 保存为浏览器书签或存放在本地安全的笔记中，不要将其公开在代码库里。
 
 ### 3. 部署步骤建议
 1.  **本地开发**：在本地完成功能开发与测试。
