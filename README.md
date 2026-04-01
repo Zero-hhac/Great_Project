@@ -131,6 +131,23 @@ cd Great_Project
 
 ---
 
+## 🌐 云端部署与维护 (Cloud Deployment)
+
+### 1. 自动化部署 (Render.com)
+项目已在 Render 平台完成自动化部署配置。每当 `main` 分支有代码推送时，Render 会自动触发构建。
+
+### 2. 手动触发后端重新部署
+如果你需要手动强制后端服务重新从 GitHub 拉取最新代码并构建，可以访问以下 **Deploy Hook** 地址：
+- **后端部署钩子**：`https://api.render.com/deploy/srv-d71cednkijhs73ci9p50?key=NdK42GYzQhE`
+> **提示**：只需在浏览器中打开此 URL 或通过 `curl` 发送 GET 请求即可触发。
+
+### 3. 部署步骤建议
+1.  **本地开发**：在本地完成功能开发与测试。
+2.  **推送代码**：执行 `git add .` -> `git commit` -> `git push origin main`。
+3.  **触发钩子**（可选）：如果 Render 没有自动开始构建，使用上述部署钩子手动触发。
+
+---
+
 ## 📄 许可证
 
 本项目遵循 MIT 协议开源。欢迎每一位热爱叙事与技术的创作者共同完善。
