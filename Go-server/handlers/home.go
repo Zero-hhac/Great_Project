@@ -64,8 +64,8 @@ func LoadPhotos() []models.Photo {
 	// 如果数据库是空的，尝试手动创建两个默认图片
 	if len(photos) == 0 {
 		defaultPhotos := []models.Photo{
-			{URL: "http://localhost:8080/static/images/sunset.jpg", Title: "落日余晖", Description: "记录生活，捕捉美好", Order: 0},
-			{URL: "http://localhost:8080/static/images/handsome.jpg", Title: "博主自拍", Description: "记录最真实的自己", Order: 1},
+			{URL: config.BaseURL + "/static/images/sunset.jpg", Title: "落日余晖", Description: "记录生活，捕捉美好", Order: 0},
+			{URL: config.BaseURL + "/static/images/handsome.jpg", Title: "博主自拍", Description: "记录最真实的自己", Order: 1},
 		}
 		for _, p := range defaultPhotos {
 			models.DB.Create(&p)
@@ -74,13 +74,12 @@ func LoadPhotos() []models.Photo {
 	}
 
 	// 修复图片路径
-	baseURL := "http://localhost:8080"
 	for i := range photos {
 		if !strings.HasPrefix(photos[i].URL, "http") {
 			if strings.HasPrefix(photos[i].URL, "/") {
-				photos[i].URL = baseURL + photos[i].URL
+				photos[i].URL = config.BaseURL + photos[i].URL
 			} else {
-				photos[i].URL = baseURL + "/" + photos[i].URL
+				photos[i].URL = config.BaseURL + "/" + photos[i].URL
 			}
 		}
 	}

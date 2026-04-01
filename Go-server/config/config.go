@@ -12,6 +12,7 @@ var (
 	DBPath      string
 	ProfilePath string
 	PhotosPath  string
+	BaseURL     string
 
 	// Database configuration
 	DATABASE_URL string
@@ -34,6 +35,7 @@ func init() {
 	DBPath = getEnv("DB_PATH", "data.db")
 	ProfilePath = getEnv("PROFILE_PATH", "public/profile.json")
 	PhotosPath = getEnv("PHOTOS_PATH", "public/photos.json")
+	BaseURL = getEnv("BASE_URL", "http://localhost:8080")
 
 	// Database configuration
 	DATABASE_URL = getEnv("DATABASE_URL", "")

@@ -6,45 +6,47 @@
   --font-body: "Manrope", sans-serif;
   --font-label: "Manrope", sans-serif;
 
-  --color-primary: #6bd8cb;
-  --color-on-primary: #003732;
-  --color-background: #131315;
-  --color-surface: #1f1f21;
-  --color-surface-container: #1b1b1d;
-  --color-on-surface: #e4e2e4;
-  --color-on-surface-variant: #c6c6cd;
-  --color-outline: #45464d;
+  /* 宏大舒畅的配色方案 - 金色暖阳 + 深邃渐隐 */
+  --color-primary: #f0b952;
+  --color-on-primary: #1a1408;
+  --color-background: #0a0b10;
+  --color-surface: #141520;
+  --color-surface-container: #181a28;
+  --color-on-surface: #e8e6f0;
+  --color-on-surface-variant: #a8a6b8;
+  --color-outline: #3a3850;
 }
 
 @layer base {
   body {
     @apply text-on-surface font-body selection:bg-primary/30;
-    background-color: #000;
+    background: linear-gradient(135deg, #0a0b10 0%, #0f1020 50%, #0a0b10 100%);
+    min-height: 100vh;
   }
 }
 
 .glass-panel {
-  background: rgba(15, 15, 17, 0.85);
+  background: rgba(20, 21, 32, 0.85);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(240, 185, 82, 0.1);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
 }
 
 .article-card-surface {
-  background: rgba(20, 20, 22, 0.95);
+  background: rgba(24, 26, 40, 0.95);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(240, 185, 82, 0.08);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
   position: relative;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .article-card-surface:hover {
-  background: rgba(24, 24, 26, 0.98);
-  border-color: rgba(107, 216, 203, 0.2);
+  background: rgba(28, 30, 48, 0.98);
+  border-color: rgba(240, 185, 82, 0.25);
   transform: translateY(-4px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px rgba(240, 185, 82, 0.1);
 }
 
 .article-card-surface::before {
@@ -54,173 +56,162 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(107, 216, 203, 0.4), transparent);
-  opacity: 0.5;
+  background: linear-gradient(90deg, transparent, rgba(240, 185, 82, 0.5), transparent);
+  opacity: 0.6;
 }
 
 .article-card-surface::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at top right, rgba(107, 216, 203, 0.03), transparent 70%);
+  background: radial-gradient(circle at top right, rgba(240, 185, 82, 0.04), transparent 70%);
   pointer-events: none;
 }
 
 .hero-gradient {
-  background: linear-gradient(to bottom, rgba(19,19,21,0) 0%, rgba(19,19,21,1) 100%);
+  background: linear-gradient(to bottom, rgba(10,11,16,0) 0%, rgba(10,11,16,1) 100%);
 }
 
 .reading-progress {
-  @apply fixed top-0 left-0 h-[2px] bg-primary z-[100] shadow-[0_0_10px_rgba(107,216,203,0.5)];
+  @apply fixed top-0 left-0 h-[2px] z-[100];
+  background: linear-gradient(90deg, #f0b952, #f5d088);
+  box-shadow: 0 0 15px rgba(240, 185, 82, 0.6);
 }
 
 /* ─── 色彩增强 ─────────────────────────────────────────────────────────── */
 .vibrant-gradient {
-  background: linear-gradient(135deg, #6bd8cb 0%, #3a86ff 50%, #8338ec 100%);
+  background: linear-gradient(135deg, #f0b952 0%, #f5d088 40%, #e8a040 100%);
 }
 
 .glass-card-vibrant {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(240, 185, 82, 0.05);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  border: 1px solid rgba(240, 185, 82, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 .stat-card-blue {
-  background: linear-gradient(135deg, rgba(58, 134, 255, 0.1) 0%, rgba(58, 134, 255, 0.05) 100%);
-  border: 1px solid rgba(58, 134, 255, 0.2);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0.05) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.25);
 }
 
 .stat-card-purple {
-  background: linear-gradient(135deg, rgba(131, 56, 236, 0.1) 0%, rgba(131, 56, 236, 0.05) 100%);
-  border: 1px solid rgba(131, 56, 236, 0.2);
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.12) 0%, rgba(167, 139, 250, 0.05) 100%);
+  border: 1px solid rgba(167, 139, 250, 0.25);
 }
 
 .stat-card-teal {
-  background: linear-gradient(135deg, rgba(107, 216, 203, 0.1) 0%, rgba(107, 216, 203, 0.05) 100%);
-  border: 1px solid rgba(107, 216, 203, 0.2);
+  background: linear-gradient(135deg, rgba(240, 185, 82, 0.12) 0%, rgba(240, 185, 82, 0.05) 100%);
+  border: 1px solid rgba(240, 185, 82, 0.25);
 }
 
 .stat-card-red {
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 107, 107, 0.05) 100%);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  background: linear-gradient(135deg, rgba(251, 146, 146, 0.12) 0%, rgba(251, 146, 146, 0.05) 100%);
+  border: 1px solid rgba(251, 146, 146, 0.25);
 }
 
 .text-gradient-vibrant {
-  background: linear-gradient(135deg, #6bd8cb 0%, #3a86ff 100%);
+  background: linear-gradient(135deg, #f0b952 0%, #f5d088 50%, #e8a040 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* ─── 文章正文排版 ─────────────────────────────────────────────── */
-/* 适用于 dangerouslySetInnerHTML 渲染的 Markdown HTML 内容 */
 .article-body {
-  /* 正文基础：18px，行高 1.9 适合中文阅读，增加易读性 */
   font-size: 18px;
   line-height: 1.9;
-  color: rgba(228, 226, 228, 0.95);
+  color: rgba(232, 230, 240, 0.95);
   font-family: "Manrope", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   letter-spacing: 0.02em;
-  /* 限制最大行宽，约 35字/行 是中文最舒适的阅读宽度 */
   word-break: break-word;
   overflow-wrap: break-word;
-  /* 增加背景对比度，减少透明度带来的干扰 */
-  background: rgba(19, 19, 21, 0.7);
+  background: rgba(20, 21, 32, 0.8);
   padding: 2.5rem;
   border-radius: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(240, 185, 82, 0.1);
   backdrop-filter: blur(10px);
 }
 
-/* 段落：上下各 1.2em */
 .article-body p {
   margin-top: 0;
   margin-bottom: 1.4em;
   text-indent: 0;
 }
 
-/* 最后一个段落不留底部外边距 */
 .article-body p:last-child {
   margin-bottom: 0;
 }
 
-/* H1 */
 .article-body h1 {
   font-family: "Newsreader", serif;
   font-size: 2em;
   font-style: italic;
   font-weight: 600;
   line-height: 1.25;
-  color: #e4e2e4;
+  color: #f0b952;
   margin-top: 2em;
   margin-bottom: 0.75em;
   letter-spacing: -0.01em;
 }
 
-/* H2 — 章节标题 */
 .article-body h2 {
   font-family: "Newsreader", serif;
   font-size: 1.5em;
   font-style: italic;
   font-weight: 600;
   line-height: 1.3;
-  color: #e4e2e4;
+  color: #f5d088;
   margin-top: 2.2em;
   margin-bottom: 0.8em;
   padding-bottom: 0.4em;
-  border-bottom: 1px solid rgba(107, 216, 203, 0.15);
+  border-bottom: 1px solid rgba(240, 185, 82, 0.2);
 }
 
-/* H3 — 小节标题 */
 .article-body h3 {
   font-family: "Newsreader", serif;
   font-size: 1.2em;
   font-style: italic;
   font-weight: 600;
   line-height: 1.35;
-  color: rgba(228, 226, 228, 0.9);
+  color: rgba(245, 208, 136, 0.9);
   margin-top: 1.8em;
   margin-bottom: 0.6em;
 }
 
-/* H4 */
 .article-body h4 {
   font-size: 1em;
   font-weight: 700;
-  color: rgba(228, 226, 228, 0.85);
+  color: rgba(232, 230, 240, 0.85);
   margin-top: 1.5em;
   margin-bottom: 0.5em;
   text-transform: none;
   letter-spacing: 0.02em;
 }
 
-/* 第一个元素不留顶部外边距 */
 .article-body > *:first-child {
   margin-top: 0;
 }
 
-/* 强调与粗体 */
 .article-body strong {
-  color: #e4e2e4;
+  color: #f5d088;
   font-weight: 700;
 }
 
 .article-body em {
-  color: rgba(228, 226, 228, 0.9);
+  color: rgba(232, 230, 240, 0.9);
   font-style: italic;
 }
 
-/* 引用块 */
 .article-body blockquote {
   font-family: "Newsreader", serif;
   font-size: 1.15em;
   font-style: italic;
   line-height: 1.7;
-  color: rgba(228, 226, 228, 0.7);
-  border-left: 3px solid #6bd8cb;
+  color: rgba(232, 230, 240, 0.75);
+  border-left: 3px solid #f0b952;
   padding: 0.8em 0 0.8em 1.5em;
   margin: 1.8em 0;
-  background: rgba(107, 216, 203, 0.04);
+  background: rgba(240, 185, 82, 0.05);
   border-radius: 0 8px 8px 0;
 }
 
@@ -228,22 +219,20 @@
   margin-bottom: 0;
 }
 
-/* 行内代码 */
 .article-body code {
   font-size: 0.875em;
   font-family: "Fira Code", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
-  background: rgba(255, 255, 255, 0.06);
-  color: #6bd8cb;
+  background: rgba(240, 185, 82, 0.1);
+  color: #f0b952;
   padding: 0.15em 0.45em;
   border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(240, 185, 82, 0.2);
   white-space: nowrap;
 }
 
-/* 代码块 */
 .article-body pre {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(240, 185, 82, 0.15);
   border-radius: 12px;
   padding: 1.25em 1.5em;
   margin: 1.8em 0;
@@ -254,14 +243,13 @@
 
 .article-body pre code {
   background: none;
-  color: rgba(228, 226, 228, 0.85);
+  color: rgba(232, 230, 240, 0.85);
   padding: 0;
   border: none;
   white-space: pre;
   font-size: 1em;
 }
 
-/* 无序/有序列表 */
 .article-body ul,
 .article-body ol {
   margin-top: 0.5em;
@@ -286,35 +274,31 @@
   list-style-type: decimal;
 }
 
-/* 嵌套列表 */
 .article-body li > ul,
 .article-body li > ol {
   margin-top: 0.4em;
   margin-bottom: 0.4em;
 }
 
-/* 分割线 */
 .article-body hr {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(240, 185, 82, 0.15);
   margin: 2.5em 0;
 }
 
-/* 链接 */
 .article-body a {
-  color: #6bd8cb;
+  color: #f0b952;
   text-decoration: underline;
-  text-decoration-color: rgba(107, 216, 203, 0.35);
+  text-decoration-color: rgba(240, 185, 82, 0.4);
   text-underline-offset: 3px;
   transition: color 0.2s, text-decoration-color 0.2s;
 }
 
 .article-body a:hover {
-  color: #9eeae4;
-  text-decoration-color: rgba(107, 216, 203, 0.8);
+  color: #f5d088;
+  text-decoration-color: rgba(240, 185, 82, 0.9);
 }
 
-/* 图片 */
 .article-body img {
   max-width: 100%;
   border-radius: 12px;
@@ -322,7 +306,6 @@
   display: block;
 }
 
-/* 表格 */
 .article-body table {
   width: 100%;
   border-collapse: collapse;
@@ -333,17 +316,35 @@
 .article-body th {
   text-align: left;
   font-weight: 700;
-  color: #e4e2e4;
+  color: #f5d088;
   padding: 0.75em 1em;
-  border-bottom: 2px solid rgba(107, 216, 203, 0.3);
+  border-bottom: 2px solid rgba(240, 185, 82, 0.35);
 }
 
 .article-body td {
   padding: 0.65em 1em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(228, 226, 228, 0.75);
+  border-bottom: 1px solid rgba(240, 185, 82, 0.1);
+  color: rgba(232, 230, 240, 0.75);
 }
 
 .article-body tr:last-child td {
   border-bottom: none;
+}
+
+/* ─── 渐隐背景效果 ─────────────────────────────────────────────────────── */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.star {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle var(--duration, 3s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  pointer-events: none;
+  z-index: 0;
 }

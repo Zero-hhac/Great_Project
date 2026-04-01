@@ -295,3 +295,142 @@ func AdminDeleteCommentAPI(c *gin.Context) {
 	log.Printf("[admin] deleted comment id=%s", id)
 	c.JSON(http.StatusOK, gin.H{"message": "评论已删除"})
 }
+
+// AdminUserActivityAPI 用户活跃度统计
+func AdminUserActivityAPI(c *gin.Context) {
+	user, _ := c.Get("user")
+	if user.(models.User).Username != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足"})
+		return
+	}
+
+	// 获取所有用户
+	var users []models.User
+	models.DB.Order("created_at desc").Find(&users)
+
+	// 统计每个用户的活跃度
+	type UserActivity struct {
+		ID            uint      `json:"id"`
+		Username      string    `json:"username"`
+		Nickname      string    `json:"nickname"`
+		Avatar        string    `json:"avatar"`
+		ArticleCount  int64     `json:"article_count"`
+		CommentCount  int64     `json:"comment_count"`
+		TotalLikes    int64     `json:"total_likes"`
+		ActivityScore int64     `json:"activity_score"`
+		CreatedAt     time.Time `json:"created_at"`
+		LastActiveAt  time.Time `json:"last_active_at"`
+	}
+
+	var activities []UserActivity
+	for _, u := range users {
+		var articleCount int64
+		var commentCount int64
+		var totalLikes int64
+
+		models.DB.Model(&models.Article{}).Where("user_id = ?", u.ID).Count(&articleCount)
+		models.DB.Model(&models.Comment{}).Where("user_id = ?", u.ID).Count(&commentCount)
+		models.DB.Model(&models.Article{}).Where("user_id = ?", u.ID).Select("COALESCE(SUM(likes_count),0)").Scan(&totalLikes)
+
+		// 活跃度分数 = 文章数 * 10 + 评论数 * 3 + 获赞数 * 1
+		activityScore := articleCount*10 + commentCount*3 + totalLikes
+
+		// 获取最后活跃时间（最近的文章或评论）
+		var lastArticle models.Article
+		var lastComment models.Comment
+		var lastActiveAt time.Time
+
+		models.DB.Where("user_id = ?", u.ID).Order("created_at desc").First(&lastArticle)
+		models.DB.Where("user_id = ?", u.ID).Order("created_at desc").First(&lastComment)
+
+		if lastArticle.CreatedAt.After(lastComment.CreatedAt) {
+			lastActiveAt = lastArticle.CreatedAt
+		} else {
+			lastActiveAt = lastComment.CreatedAt
+		}
+
+		activities = append(activities, UserActivity{
+			ID:            u.ID,
+			Username:      u.Username,
+			Nickname:      u.Nickname,
+			Avatar:        u.Avatar,
+			ArticleCount:  articleCount,
+			CommentCount:  commentCount,
+			TotalLikes:    totalLikes,
+			ActivityScore: activityScore,
+			CreatedAt:     u.CreatedAt,
+			LastActiveAt:  lastActiveAt,
+		})
+	}
+
+	// 按活跃度排序
+	for i := 0; i < len(activities)-1; i++ {
+		for j := i + 1; j < len(activities); j++ {
+			if activities[j].ActivityScore > activities[i].ActivityScore {
+				activities[i], activities[j] = activities[j], activities[i]
+			}
+		}
+	}
+
+	// 统计近30天每天的新用户数
+	thirtyDaysAgo := time.Now().AddDate(0, 0, -29).Truncate(24 * time.Hour)
+	var recentUsers []models.User
+	models.DB.Where("created_at >= ?", thirtyDaysAgo).Find(&recentUsers)
+
+	userGrowthMap := make(map[string]int64)
+	for _, u := range recentUsers {
+		key := u.CreatedAt.Format("01-02")
+		userGrowthMap[key]++
+	}
+
+	var userGrowth []gin.H
+	for i := 29; i >= 0; i-- {
+		dateStr := time.Now().AddDate(0, 0, -i).Format("01-02")
+		userGrowth = append(userGrowth, gin.H{
+			"date":  dateStr,
+			"count": userGrowthMap[dateStr],
+		})
+	}
+
+	// 统计近30天每天的活跃用户数（有文章或评论的用户）
+	var thirtyDayArticles []models.Article
+	var thirtyDayComments []models.Comment
+	models.DB.Where("created_at >= ?", thirtyDaysAgo).Find(&thirtyDayArticles)
+	models.DB.Where("created_at >= ?", thirtyDaysAgo).Find(&thirtyDayComments)
+
+	activeUsersMap := make(map[string]map[uint]bool)
+	for i := 29; i >= 0; i-- {
+		dateStr := time.Now().AddDate(0, 0, -i).Format("01-02")
+		activeUsersMap[dateStr] = make(map[uint]bool)
+	}
+
+	for _, a := range thirtyDayArticles {
+		key := a.CreatedAt.Format("01-02")
+		if _, exists := activeUsersMap[key]; exists {
+			activeUsersMap[key][a.UserID] = true
+		}
+	}
+	for _, cm := range thirtyDayComments {
+		key := cm.CreatedAt.Format("01-02")
+		if _, exists := activeUsersMap[key]; exists {
+			activeUsersMap[key][cm.UserID] = true
+		}
+	}
+
+	var activeUsers []gin.H
+	for i := 29; i >= 0; i-- {
+		dateStr := time.Now().AddDate(0, 0, -i).Format("01-02")
+		activeUsers = append(activeUsers, gin.H{
+			"date":  dateStr,
+			"count": len(activeUsersMap[dateStr]),
+		})
+	}
+
+	log.Printf("[admin] user activity: %d users analyzed", len(activities))
+
+	c.JSON(http.StatusOK, gin.H{
+		"users":        activities,
+		"user_growth":  userGrowth,
+		"active_users": activeUsers,
+	})
+}
