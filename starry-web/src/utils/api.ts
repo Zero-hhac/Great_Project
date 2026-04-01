@@ -1,5 +1,5 @@
 const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD 
-  ? 'https://api.hahahahaha.icu' 
+  ? 'https://great-project-3j4m.onrender.com' 
   : '');
 
 export async function apiFetch(path: string, opts?: RequestInit) {
