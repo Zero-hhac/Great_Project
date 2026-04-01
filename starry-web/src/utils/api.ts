@@ -3,7 +3,9 @@ const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD
   : '');
 
 export async function apiFetch(path: string, opts?: RequestInit) {
-  const r = await fetch(API + path, { credentials: 'include', ...opts });
+  // 如果路径以 /api/ 开头，但在生产环境，我们需要去掉它，因为后端没带 /api
+  const finalPath = import.meta.env.PROD ? path.replace(/^\/api/, '') : path;
+  const r = await fetch(API + finalPath, { credentials: 'include', ...opts });
   return r;
 }
 
