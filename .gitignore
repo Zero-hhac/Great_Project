@@ -4,6 +4,8 @@ dist/
 tmp_build/
 *.exe
 *.log
+*.sql
+*.db
 .env
 .DS_Store
 .idea/
@@ -13,3 +15,4 @@ starry-web/dist/
 Go-server/tmp_build/
 Go-server/main.exe
 Go-server/.env
+Go-server/data.db
