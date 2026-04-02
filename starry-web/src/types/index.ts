@@ -1,6 +1,6 @@
 export type Page = 'home' | 'stories' | 'collections' | 'write' | 'settings' | 'profile' | 'article' | 'admin' | 'collection_detail';
 export type AuthPage = 'login' | 'register';
-export type AdminTab = 'overview' | 'users' | 'articles' | 'comments' | 'activity';
+export type AdminTab = 'overview' | 'users' | 'articles' | 'comments' | 'activity' | 'reviews' | 'permissions';
 
 export interface UserInfo {
   id: number;
@@ -32,6 +32,7 @@ export interface Article {
   is_liked: boolean;
   collection_id?: number;
   collection?: Collection;
+  review_status?: number; // 0: 待审核, 1: 已通过, 2: 已驳回
 }
 
 export interface Comment {

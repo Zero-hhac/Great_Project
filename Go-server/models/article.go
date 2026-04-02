@@ -16,6 +16,7 @@ type Article struct {
 	Collection   *Collection    `gorm:"foreignKey:CollectionID" json:"collection"`
 	LikesCount   int            `gorm:"default:0" json:"likes_count"`
 	IsLiked      bool           `gorm:"-" json:"is_liked"`
+	ReviewStatus int            `gorm:"default:1" json:"review_status"` // 0: 待审核, 1: 已通过, 2: 已驳回 (默认1是为了兼容老数据)
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`

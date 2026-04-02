@@ -19,12 +19,14 @@ function Toast({ msg, type, onClose }: { msg: string; type: 'ok' | 'err'; onClos
   );
 }
 
-export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+export const AdminDashboard = ({ user, initialTab = 'overview', onTabChange }: { user: UserInfo | null, initialTab?: AdminTab, onTabChange?: (tab: AdminTab) => void }) => {
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
+  const [reviewArticles, setReviewArticles] = useState<any[]>([]);
+  const [userPermissions, setUserPermissions] = useState<any[]>([]);
   const [userActivity, setUserActivity] = useState<any[]>([]);
   const [userGrowth, setUserGrowth] = useState<any[]>([]);
   const [activeUsers, setActiveUsers] = useState<any[]>([]);
@@ -32,6 +34,11 @@ export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
+
+  // 当外部改变 initialTab 时，同步内部状态
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   async function fetchWithStatus(path: string) {
     const r = await apiFetch(path);
@@ -51,12 +58,14 @@ export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
         throw new Error('权限不足，请使用管理员账号登录');
       }
 
-      const [sRes, uRes, aRes, cRes, activityRes] = await Promise.all([
+      const [sRes, uRes, aRes, cRes, activityRes, reviewsRes, permissionsRes] = await Promise.all([
         fetchWithStatus('/api/admin/stats'),
         fetchWithStatus('/api/admin/users'),
         fetchWithStatus('/api/admin/articles'),
         fetchWithStatus('/api/admin/comments'),
         fetchWithStatus('/api/admin/user-activity'),
+        fetchWithStatus('/api/admin/reviews'),
+        fetchWithStatus('/api/admin/users/permissions'),
       ]);
       setStats(sRes);
       setUsers(Array.isArray(uRes) ? uRes : []);
@@ -65,15 +74,47 @@ export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
       setUserActivity(Array.isArray(activityRes?.users) ? activityRes.users : []);
       setUserGrowth(Array.isArray(activityRes?.user_growth) ? activityRes.user_growth : []);
       setActiveUsers(Array.isArray(activityRes?.active_users) ? activityRes.active_users : []);
+      setReviewArticles(Array.isArray(reviewsRes) ? reviewsRes : []);
+      setUserPermissions(Array.isArray(permissionsRes) ? permissionsRes : []);
     } catch (e: any) {
       setError(e.message || '连接服务器失败');
       console.error('[Admin] fetchAll error:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const handleReview = async (id: number, action: 'approve' | 'reject') => {
+    try {
+      const r = await apiFetch(`/api/admin/reviews/${id}/action`, {
+        method: 'POST',
+        body: JSON.stringify({ action })
+      });
+      if (r.ok) {
+        setToast({ msg: action === 'approve' ? '审核通过' : '已驳回', type: 'ok' });
+        fetchAll();
+      }
+    } catch {
+      setToast({ msg: '操作失败', type: 'err' });
+    }
+  };
+
+  const handlePermissionChange = async (userId: number, hasPermission: boolean) => {
+    try {
+      const r = await apiFetch(`/api/admin/users/${userId}/permission`, {
+        method: 'PUT',
+        body: JSON.stringify({ has_permission: hasPermission })
+      });
+      if (r.ok) {
+        setToast({ msg: '权限已更新', type: 'ok' });
+        fetchAll();
+      }
+    } catch {
+      setToast({ msg: '更新失败', type: 'err' });
+    }
+  };
 
   const handleDelete = useCallback(async (type: 'user' | 'article' | 'comment', id: number) => {
     if (!confirm('确定要删除吗？此操作不可恢复。')) return;
@@ -104,6 +145,14 @@ export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
     c.user?.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.article_title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const filteredReviews = reviewArticles.filter(a =>
+    a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.user?.nickname?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredPermissions = userPermissions.filter(p =>
+    p.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.nickname?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const pieData = stats ? [
     { name: '文章', value: Number(stats.total_articles) || 0 },
@@ -133,6 +182,8 @@ export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
 
   const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: '概览', icon: <BarChart3 size={16} /> },
+    { id: 'reviews', label: '审核', icon: <CheckCircle size={16} /> },
+    { id: 'permissions', label: '权限', icon: <Shield size={16} /> },
     { id: 'users', label: '用户', icon: <Users size={16} /> },
     { id: 'articles', label: '文章', icon: <FileText size={16} /> },
     { id: 'comments', label: '评论', icon: <MessageCircle size={16} /> },
@@ -162,12 +213,12 @@ export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
       </header>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 p-1 rounded-2xl bg-surface/50 border border-white/5 w-fit">
+      <div className="flex gap-1 p-1 rounded-2xl bg-surface/50 border border-white/5 w-fit overflow-x-auto max-w-full no-scrollbar">
         {tabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all ${
+            onClick={() => { setActiveTab(tab.id); onTabChange?.(tab.id); setSearchQuery(''); }}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all whitespace-nowrap ${
               activeTab === tab.id
                 ? 'bg-primary text-[#0a0a0c] shadow-lg shadow-primary/20'
                 : 'text-on-surface-variant/50 hover:text-on-surface-variant hover:bg-white/[0.03]'
@@ -179,12 +230,12 @@ export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
       </div>
 
       {/* Search bar for data tabs */}
-      {activeTab !== 'overview' && (
+      {['users', 'articles', 'comments', 'reviews', 'permissions'].includes(activeTab) && (
         <div className="relative max-w-md">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/30" />
           <input
             type="text"
-            placeholder={activeTab === 'users' ? '搜索用户...' : activeTab === 'articles' ? '搜索文章...' : '搜索评论...'}
+            placeholder={activeTab === 'users' ? '搜索用户...' : activeTab === 'articles' ? '搜索文章...' : activeTab === 'reviews' ? '搜索待审核文章...' : '搜索...'}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 py-3 rounded-xl bg-surface/80 border border-white/5 text-sm text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all"
@@ -427,6 +478,72 @@ export const AdminDashboard = ({ user }: { user: UserInfo | null }) => {
               </div>
             </motion.div>
           </div>
+        </div>
+      )}
+
+      {/* ── Reviews Tab ── */}
+      {activeTab === 'reviews' && (
+        <div className="grid gap-4">
+          {filteredReviews.length === 0 ? (
+            <div className="p-20 text-center text-on-surface-variant/40 italic border border-dashed border-white/5 rounded-3xl">暂无待审核文章</div>
+          ) : (
+            filteredReviews.map(a => (
+              <motion.div key={a.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 rounded-2xl bg-surface/60 border border-white/5 flex items-center justify-between gap-6 hover:border-white/10 transition-colors">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg">待审核</span>
+                    <h3 className="font-bold text-on-surface">{a.title}</h3>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-on-surface-variant/60">
+                    <span className="flex items-center gap-1"><User size={12} /> {a.user?.nickname}</span>
+                    <span>{formatDate(a.created_at)}</span>
+                  </div>
+                  <p className="text-sm text-on-surface-variant/40 line-clamp-1">{a.content.substring(0, 100)}...</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => handleReview(a.id, 'reject')} className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors">驳回</button>
+                  <button onClick={() => handleReview(a.id, 'approve')} className="px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors">通过</button>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ── Permissions Tab ── */}
+      {activeTab === 'permissions' && (
+        <div className="grid gap-4">
+          {filteredPermissions.map(p => (
+            <motion.div key={p.user_id} layout className="p-6 rounded-2xl bg-surface/60 border border-white/5 flex items-center justify-between gap-6 hover:border-white/10 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-on-surface-variant/40">
+                  <User size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-on-surface">{p.nickname}</h3>
+                  <p className="text-xs text-on-surface-variant/40">@{p.username}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className="text-[10px] text-on-surface-variant/40 uppercase tracking-widest font-bold mb-1">发言权状态</p>
+                  <span className={`text-xs font-bold ${p.has_permission ? 'text-green-400' : 'text-red-400'}`}>
+                    {p.has_permission ? '自由发言' : '需审核'}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => handlePermissionChange(p.user_id, !p.has_permission)}
+                  className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    p.has_permission 
+                      ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' 
+                      : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                  }`}
+                >
+                  {p.has_permission ? '禁言/开启审核' : '开启自由发言'}
+                </button>
+              </div>
+            </motion.div>
+          ))}
         </div>
       )}
 

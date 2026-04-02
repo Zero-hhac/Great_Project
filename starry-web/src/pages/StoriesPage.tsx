@@ -78,7 +78,11 @@ export const StoriesPage = ({ user, onToast, onViewArticle }: { user: UserInfo |
               <div className="flex items-start gap-8">
                 <span className="font-mono text-primary text-sm opacity-40 mt-1 select-none">{String(i + 1).padStart(2, '0')}</span>
                 <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-widest text-primary font-bold">{a.user?.nickname || '作者'}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-[10px] uppercase tracking-widest text-primary font-bold">{a.user?.nickname || '作者'}</p>
+                    {a.review_status === 0 && <span className="text-[9px] bg-yellow-500/10 text-yellow-500 px-1.5 py-0.5 rounded border border-yellow-500/20 font-bold uppercase tracking-tighter">待审核</span>}
+                    {a.review_status === 2 && <span className="text-[9px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded border border-red-500/20 font-bold uppercase tracking-tighter">已驳回</span>}
+                  </div>
                   <h3 className="font-headline text-3xl italic group-hover:text-primary transition-colors">{a.title}</h3>
                   <p className="text-sm text-on-surface-variant/70 max-w-xl line-clamp-2 leading-relaxed">{a.content?.replace(/[#*`]/g, '').slice(0, 150)}...</p>
                   <div className="flex items-center gap-4 pt-2">

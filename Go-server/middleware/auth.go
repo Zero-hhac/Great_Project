@@ -38,3 +38,24 @@ func AuthRequired() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// AdminRequired 管理员权限中间件
+func AdminRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userVal, exists := c.Get("user")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "请先登录"})
+			c.Abort()
+			return
+		}
+
+		user := userVal.(models.User)
+		if user.Username != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "权限不足，仅管理员可访问"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}

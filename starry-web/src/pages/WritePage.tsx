@@ -23,7 +23,16 @@ export const WritePage = ({ onToast, onNavigate }: { onToast: (msg: string, type
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ title, content, collection_id: selectedCol }) 
       });
-      if (r.ok) { onToast('发布成功！', 'ok'); setTitle(''); setContent(''); onNavigate('stories'); }
+      if (r.ok) { 
+        const data = await r.json();
+        if (data.review_status === 0) {
+          onToast('文章已提交，等待管理员审核', 'ok');
+        } else {
+          onToast('发布成功！', 'ok');
+        }
+        setTitle(''); setContent(''); 
+        onNavigate('stories'); 
+      }
       else { const d = await r.json(); onToast(d.error || '发布失败', 'err'); }
     } catch { onToast('网络错误', 'err'); } finally { setLoading(false); }
   };

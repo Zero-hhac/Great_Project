@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -336,7 +337,23 @@ func UpdateArticle(c *gin.Context) {
 // ArticleListAPI 文章列表 API
 func ArticleListAPI(c *gin.Context) {
 	var articles []models.Article
-	models.DB.Preload("User").Order("created_at desc").Find(&articles)
+	query := models.DB.Preload("User")
+
+	// 权限检查：非 admin 用户只能看到已通过的文章 (ReviewStatus = 1)
+	userVal, exists := c.Get("user")
+	isAdmin := false
+	if exists {
+		user := userVal.(models.User)
+		if user.Username == "admin" {
+			isAdmin = true
+		}
+	}
+
+	if !isAdmin {
+		query = query.Where("review_status = ?", 1)
+	}
+
+	query.Order("created_at desc").Find(&articles)
 	c.JSON(http.StatusOK, articles)
 }
 
@@ -392,19 +409,53 @@ func CreateArticleAPI(c *gin.Context) {
 		return
 	}
 
-	userIDStr, _ := c.Get("user_id")
-	userID, _ := strconv.Atoi(userIDStr.(string))
+	userVal, _ := c.Get("user")
+	user := userVal.(models.User)
 
 	article := models.Article{
 		Title:        input.Title,
 		Content:      input.Content,
-		UserID:       uint(userID),
+		UserID:       user.ID,
+		User:         user,
 		CollectionID: input.CollectionID,
+	}
+
+	// 审核机制：
+	// 1. admin 账号直接发布 (ReviewStatus = 1)
+	// 2. 普通账号：检查发言权权限
+	if user.Username == "admin" {
+		article.ReviewStatus = 1
+	} else {
+		// 检查发言权
+		var permission models.UserSpeechPermission
+		if err := models.DB.Where("user_id = ?", user.ID).First(&permission).Error; err != nil {
+			// 如果记录不存在，默认进入审核 (或设为 true/false 取决于你的策略)
+			// 这里假设默认需要审核 (ReviewStatus = 0)
+			article.ReviewStatus = 0
+		} else if permission.HasPermission {
+			article.ReviewStatus = 1
+		} else {
+			article.ReviewStatus = 0
+		}
 	}
 
 	if err := models.DB.Create(&article).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "发布失败"})
 		return
+	}
+
+	// 如果进入审核状态，创建通知给管理员
+	if article.ReviewStatus == 0 {
+		var admins []models.User
+		models.DB.Where("username = ?", "admin").Find(&admins)
+		for _, admin := range admins {
+			models.DB.Create(&models.Notification{
+				UserID:    admin.ID,
+				Type:      "review_request",
+				Content:   fmt.Sprintf("用户 %s 发布了新文章《%s》，等待审核。", user.Nickname, article.Title),
+				ArticleID: article.ID,
+			})
+		}
 	}
 
 	c.JSON(http.StatusOK, article)

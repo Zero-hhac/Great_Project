@@ -1,10 +1,8 @@
-const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD 
-  ? `https://api.${window.location.hostname.replace('www.', '')}` 
-  : '');
+const API = import.meta.env.VITE_API_URL || '';
 
 export async function apiFetch(path: string, opts?: RequestInit) {
-  // 如果路径以 /api/ 开头，但在生产环境，我们需要去掉它，因为后端没带 /api
-  const finalPath = import.meta.env.PROD ? path.replace(/^\/api/, '') : path;
+  // 在生产环境下，不再删除 /api 前缀，因为我们要靠 Nginx 的 location /api/ 来转发
+  const finalPath = path;
   
   // 添加超时处理
   const controller = new AbortController();

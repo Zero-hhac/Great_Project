@@ -434,3 +434,20 @@ func AdminUserActivityAPI(c *gin.Context) {
 		"active_users": activeUsers,
 	})
 }
+
+// AdminAuditLogsAPI 获取操作日志列表
+func AdminAuditLogsAPI(c *gin.Context) {
+	user, _ := c.Get("user")
+	if user.(models.User).Username != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "权限不足"})
+		return
+	}
+
+	var logs []models.AuditLog
+	if err := models.DB.Preload("User").Order("created_at desc").Limit(100).Find(&logs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "查询失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, logs)
+}

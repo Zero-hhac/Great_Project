@@ -62,6 +62,7 @@ func RegisterAuthRoutes(r *gin.Engine) {
 
 		// 管理员接口
 		adminGroup := auth.Group("/api/admin")
+		adminGroup.Use(middleware.AdminRequired())
 		{
 			adminGroup.GET("/stats", handlers.AdminStatsAPI)
 			adminGroup.GET("/users", handlers.AdminUsersAPI)
@@ -71,6 +72,18 @@ func RegisterAuthRoutes(r *gin.Engine) {
 			adminGroup.GET("/comments", handlers.AdminCommentsAPI)
 			adminGroup.DELETE("/comments/:id", handlers.AdminDeleteCommentAPI)
 			adminGroup.GET("/user-activity", handlers.AdminUserActivityAPI)
+			adminGroup.GET("/audit-logs", handlers.AdminAuditLogsAPI)
+
+			// 审核相关
+			adminGroup.GET("/reviews", handlers.AdminReviewsAPI)
+			adminGroup.POST("/reviews/:id/action", handlers.ReviewActionAPI)
+			adminGroup.GET("/users/permissions", handlers.AdminUserPermissionsAPI)
+			adminGroup.PUT("/users/:id/permission", handlers.UpdateUserPermissionAPI)
 		}
+
+		// 通知相关
+		auth.GET("/api/notifications/unread", handlers.UnreadNotificationsAPI)
+		auth.PUT("/api/notifications/:id/read", handlers.MarkNotificationReadAPI)
+		auth.PUT("/api/notifications/:id/acknowledge", handlers.AcknowledgeNotificationAPI)
 	}
 }

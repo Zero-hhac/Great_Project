@@ -17,6 +17,8 @@ import {
   AdminDashboard,
   SettingsPage,
 } from './pages';
+import { NotificationModal } from './components/NotificationModal';
+import { AdminTab } from './types';
 
 export default function App() {
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -27,6 +29,7 @@ export default function App() {
   const [selectedCollectionId, setSelectedCollectionId] = useState<number | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [adminInitialTab, setAdminInitialTab] = useState<AdminTab>('overview');
 
   const showToast = useCallback((msg: string, type: 'ok' | 'err') => setToast({ msg, type }), []);
 
@@ -51,6 +54,11 @@ export default function App() {
   const goBack = useCallback(() => {
     setCurrentPage(prevPage);
   }, [prevPage]);
+
+  const openAdminReviews = useCallback(() => {
+    setAdminInitialTab('reviews');
+    setCurrentPage('admin');
+  }, []);
 
   useEffect(() => {
     apiFetch('/api/user/profile')
@@ -107,7 +115,7 @@ export default function App() {
         return <WritePage onToast={showToast} onNavigate={setCurrentPage} />;
       case 'admin':
         return user?.username === 'admin' ? (
-          <AdminDashboard user={user} />
+          <AdminDashboard user={user} initialTab={adminInitialTab} onTabChange={setAdminInitialTab} />
         ) : (
           <HomePage onNavigate={setCurrentPage} onViewArticle={viewArticle} />
         );
@@ -132,6 +140,7 @@ export default function App() {
       <AnimatePresence>
         {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
       </AnimatePresence>
+      {user?.username === 'admin' && <NotificationModal onOpenReviews={openAdminReviews} />}
       <Sidebar activePage={currentPage} onNavigate={p => { setPrevPage(currentPage); setCurrentPage(p); }} user={user} />
       <MobileNav activePage={currentPage} onNavigate={p => { setPrevPage(currentPage); setCurrentPage(p); }} user={user} />
       <TopBar onNavigate={p => { setPrevPage(currentPage); setCurrentPage(p); }} user={user} onLogout={handleLogout} onBack={goBack} />
