@@ -147,6 +147,50 @@ cd Great_Project
 
 ---
 
+## 🌐 阿里云服务器部署指南 (Aliyun Deployment)
+
+如果你打算将项目部署到阿里云服务器（Ubuntu 22.04），请参考以下步骤：
+
+### 1. 环境安装
+```bash
+# 更新系统并安装 Nginx
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y nginx git build-essential
+
+# 安装 Go 1.23
+wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+source ~/.bashrc
+
+# 安装 Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+### 2. 代码拉取与构建
+```bash
+cd /var/www
+sudo git clone https://github.com/Zero-hhac/Great_Project.git
+cd Great_Project
+
+# 构建前端
+cd starry-web
+npm install
+npm run build
+
+# 构建后端
+cd ../Go-server
+go build -o server main.go
+```
+
+### 3. Nginx 配置建议
+建议使用 Nginx 将前端静态文件和后端 API 统一管理。
+- **前端地址**: `https://hahahahaha.icu` -> 指向 `starry-web/dist` 目录。
+- **后端 API**: `https://api.hahahahaha.icu` -> 反向代理到本地 `8080` 端口。
+
+---
+
 ## 📄 许可证
 
 本项目遵循 MIT 协议开源。欢迎每一位热爱叙事与技术的创作者共同完善。
